@@ -78,6 +78,15 @@ test.describe('Listing intelligence card — lst_speed_01 (UhrenWelt München)',
     expect(count).toBeGreaterThanOrEqual(1)
   })
 
+  test('should show star thumbnail-select button on photo hover', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Hover-reveal is desktop-only; touch devices use tap interactions')
+    const firstPhoto = page.locator('button.cursor-zoom-in').first()
+    await firstPhoto.hover()
+    // Star button is sibling of the lightbox button inside the photo wrapper
+    const starBtn = firstPhoto.locator('..').getByRole('button', { name: /thumbnail/i })
+    await expect(starBtn).toBeVisible()
+  })
+
   test('should open lightbox when photo is clicked', async ({ page }) => {
     const firstPhotoButton = page.locator('button.cursor-zoom-in').first()
     await firstPhotoButton.click()

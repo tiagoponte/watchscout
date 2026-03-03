@@ -81,4 +81,22 @@ test.describe('Dashboard', () => {
     const h1Count = await page.locator('h1').count()
     expect(h1Count).toBe(1)
   })
+
+  // ── Card actions ─────────────────────────────────────────────────────────────
+
+  test('should reveal actions button when card is hovered', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Hover-reveal is desktop-only; touch devices use tap interactions')
+    const card = page.locator('[data-testid="search-card"]').first()
+    await card.hover()
+    await expect(card.getByRole('button', { name: 'Search actions' })).toBeVisible()
+  })
+
+  test('should show Archive and Delete options in card actions menu', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Hover-reveal is desktop-only; touch devices use tap interactions')
+    const card = page.locator('[data-testid="search-card"]').first()
+    await card.hover()
+    await card.getByRole('button', { name: 'Search actions' }).click()
+    await expect(page.getByRole('menuitem', { name: /archive/i })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: /delete/i })).toBeVisible()
+  })
 })

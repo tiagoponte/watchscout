@@ -68,6 +68,27 @@ test.describe('Search page — Speedmaster (5 listings)', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
   })
 
+  test('should show a thumbnail image in each listing row', async ({ page }) => {
+    // lst_speed_01 has photos — the thumbnail img should be inside the row
+    const firstRow = page.locator('[data-testid="listing-row"]').first()
+    await expect(firstRow.locator('img').first()).toBeVisible()
+  })
+
+  test('should reveal listing actions button when row is hovered', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Hover-reveal is desktop-only; touch devices use tap interactions')
+    const row = page.locator('[data-testid="listing-row"]').first()
+    await row.hover()
+    await expect(row.getByRole('button', { name: 'Listing actions' })).toBeVisible()
+  })
+
+  test('should show Remove listing option in listing actions menu', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Hover-reveal is desktop-only; touch devices use tap interactions')
+    const row = page.locator('[data-testid="listing-row"]').first()
+    await row.hover()
+    await row.getByRole('button', { name: 'Listing actions' }).click()
+    await expect(page.getByRole('menuitem', { name: /remove listing/i })).toBeVisible()
+  })
+
   test('should navigate to listing detail when row clicked', async ({ page }) => {
     await page.locator('[data-testid="listing-row"]').first().click()
     await expect(page).toHaveURL(/\/listings\//)
