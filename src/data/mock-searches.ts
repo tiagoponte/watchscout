@@ -1,0 +1,55 @@
+import { Search } from '@/types'
+
+export const mockSearches: Search[] = [
+  {
+    id: 'srch_speedmaster_01',
+    name: 'Omega Speedmaster Date',
+    watchCategory: 'chronograph',
+    criteria: {
+      modelName: 'Omega Speedmaster Date',
+      referenceNumber: '3210.50',
+      budgetMin: 2500,
+      budgetMax: 3500,
+      currency: 'EUR',
+      acceptableConditions: ['mint', 'very_good', 'good'],
+      mustHaves: ['Box or papers', 'Unpolished case'],
+      dealBreakers: ['Heavily polished', 'No service history for 10+ years'],
+      sellerTypePreference: 'no_preference',
+      preferredShippingOrigins: ['DE', 'AT', 'CH', 'GB', 'FR', 'IT', 'NL'],
+      notes:
+        'Looking for a clean example with original bracelet. Blue dial preferred. Ref 3210.50 or 3513.50.',
+    },
+    status: 'active',
+    listingIds: [
+      'lst_speed_01',
+      'lst_speed_02',
+      'lst_speed_03',
+      'lst_speed_04',
+      'lst_speed_05',
+    ],
+    createdAt: '2026-01-15T10:00:00Z',
+    updatedAt: '2026-02-20T14:30:00Z',
+  },
+  {
+    id: 'srch_datejust_01',
+    name: 'Rolex Datejust 36',
+    watchCategory: 'dress',
+    criteria: {
+      modelName: 'Rolex Datejust 36',
+      referenceNumber: '126200',
+      budgetMin: 5000,
+      budgetMax: 7000,
+      currency: 'EUR',
+      acceptableConditions: ['mint', 'very_good'],
+      mustHaves: ['Box and papers', 'Dealer warranty'],
+      dealBreakers: ['Aftermarket parts', 'Polished case'],
+      sellerTypePreference: 'dealer',
+      preferredShippingOrigins: ['DE', 'CH', 'GB'],
+      notes: 'Prefer Jubilee bracelet. White or silver dial only.',
+    },
+    status: 'active',
+    listingIds: ['lst_datejust_01', 'lst_datejust_02'],
+    createdAt: '2026-02-01T09:00:00Z',
+    updatedAt: '2026-02-25T11:00:00Z',
+  },
+]

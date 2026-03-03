@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Search {
+  id               String    @id
+  userId           String
+  name             String
+  watchCategory    String?
+  criteria         Json
+  status           String    @default("active")
+  decidedListingId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  listings         Listing[]
+
+  @@index([userId])
+}
+
+model Listing {
+  id                   String    @id
+  searchId             String
+  search               Search    @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  platform             String
+  platformListingId    String?
+  url                  String?
+
+  // Auto-extracted (CardField<T> stored as JSONB)
+  referenceNumber      Json
+  askingPrice          Json
+  currency             Json
+  shippingCost         Json
+  conditionRating      Json
+  includedItems        Json
+  sellerWarrantyMonths Json
+  returnsPolicy        Json
+  platformProtection   Json
+  photos               String[]
+  thumbnailPhotoIndex  Int?
+  seller               Json
+
+  // To be discovered
+  polishingStatus      Json
+  lastServiceYear      Json
+  lastServiceType      Json
+  partsReplaced        Json
+  braceletSizingInfo   Json
+  actualShippingToUser Json
+
+  // Calculated
+  allInPrice          Float?
+  valueScore          Float?
+  riskScore           Float?
+  conditionConfidence Float?
+
+  // Ranking (stored inline — each listing belongs to exactly one search)
+  rank           Int?
+  compositeScore Float?
+  factorScores   Json?
+  rankDelta      Int?
+
+  notes       String?
+  addedAt     DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  contactedAt DateTime?
+
+  @@index([searchId, rank])
+}
