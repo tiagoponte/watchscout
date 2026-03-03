@@ -1,11 +1,16 @@
-import Link from 'next/link'
-import { Search as SearchIcon, ChevronRight, Shield } from 'lucide-react'
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { Search as SearchIcon, ChevronRight, Shield, MoreHorizontal, Archive, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { WatchIcon } from '@/components/ui/watch-icon'
 import { Search, RankedListing } from '@/types'
 import { formatCurrency, formatRelativeDate, getScoreColor, getScoreLabel, getRiskColor, getRiskLabel } from '@/lib/format'
+import { archiveSearchAction, deleteSearchAction } from '@/app/(app)/dashboard/actions'
 
 interface SearchCardProps {
   search: Search
@@ -14,13 +19,16 @@ interface SearchCardProps {
 }
 
 const statusConfig = {
-  active: { label: 'Active', className: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
-  paused: { label: 'Paused', className: 'bg-zinc-900 text-zinc-400 border-zinc-700' },
-  decided: { label: 'Decided', className: 'bg-blue-950 text-blue-400 border-blue-800' },
+  active:   { label: 'Active',   className: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
+  paused:   { label: 'Paused',   className: 'bg-zinc-900 text-zinc-400 border-zinc-700' },
+  decided:  { label: 'Decided',  className: 'bg-blue-950 text-blue-400 border-blue-800' },
+  archived: { label: 'Archived', className: 'bg-zinc-900 text-zinc-500 border-zinc-700' },
 }
 
 export function SearchCard({ search, topRankedListing, contactedCount = 0 }: SearchCardProps) {
-  const status = statusConfig[search.status]
+  const router = useRouter()
+  const href = `/searches/${search.id}`
+  const status = statusConfig[search.status] ?? statusConfig.active
   const { criteria } = search
   const totalListings = search.listingIds.length
   const topListing = topRankedListing?.listing ?? null
@@ -29,8 +37,28 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
     ? (topListing.allInPrice ?? topListing.askingPrice.value)
     : null
 
+  async function handleArchive(e: React.MouseEvent) {
+    e.stopPropagation()
+    await archiveSearchAction(search.id)
+    router.refresh()
+  }
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!confirm(`Delete "${search.name}" and all its listings? This cannot be undone.`)) return
+    await deleteSearchAction(search.id)
+    router.refresh()
+  }
+
   return (
-    <Link href={`/searches/${search.id}`} className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950">
+    <div
+      role="link"
+      tabIndex={0}
+      data-testid="search-card"
+      onClick={() => router.push(href)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(href) }}
+      className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
+    >
       <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-600 transition-colors h-full">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between gap-3">
@@ -53,7 +81,39 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
                 </div>
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-zinc-400 transition-colors shrink-0" />
+
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Search actions"
+                    className="h-8 w-8 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleArchive}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-400 focus:text-red-400 focus:bg-red-950/40 cursor-pointer"
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
+            </div>
           </div>
         </CardHeader>
         <div className="mx-6 border-t border-zinc-800" />
@@ -66,7 +126,6 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
             </span>
           </div>
 
-          {/* Progress summary — Marco #2 */}
           <div className="flex items-center justify-between text-sm">
             <span className="text-zinc-500">Listings</span>
             <span className="tabular-nums">
@@ -79,7 +138,6 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
             </span>
           </div>
 
-          {/* Top pick — price + trust + score + label */}
           {topRankedListing && topListing && (
             <>
               <div className="flex items-center justify-between text-sm pt-0.5">
@@ -139,6 +197,6 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
           )}
         </CardContent>
       </Card>
-    </Link>
+    </div>
   )
 }

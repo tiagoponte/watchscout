@@ -20,11 +20,22 @@ function mapSearch(row: SearchWithListings): Search {
 
 export async function getSearches(userId: string): Promise<Search[]> {
   const rows = await prisma.search.findMany({
-    where: { userId },
+    where: { userId, status: { not: 'archived' } },
     include: { listings: { select: { id: true } } },
     orderBy: { createdAt: 'desc' },
   })
   return rows.map(mapSearch)
+}
+
+export async function archiveSearch(searchId: string, userId: string): Promise<void> {
+  await prisma.search.updateMany({
+    where: { id: searchId, userId },
+    data: { status: 'archived' },
+  })
+}
+
+export async function deleteSearch(searchId: string, userId: string): Promise<void> {
+  await prisma.search.deleteMany({ where: { id: searchId, userId } })
 }
 
 export async function getSearch(searchId: string, userId: string): Promise<Search | null> {

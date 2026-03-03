@@ -16,9 +16,10 @@ interface Props {
 }
 
 const statusConfig = {
-  active: { label: 'Active', className: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
-  paused: { label: 'Paused', className: 'bg-zinc-900 text-zinc-400 border-zinc-700' },
-  decided: { label: 'Decided', className: 'bg-blue-950 text-blue-400 border-blue-800' },
+  active:   { label: 'Active',   className: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
+  paused:   { label: 'Paused',   className: 'bg-zinc-900 text-zinc-400 border-zinc-700' },
+  decided:  { label: 'Decided',  className: 'bg-blue-950 text-blue-400 border-blue-800' },
+  archived: { label: 'Archived', className: 'bg-zinc-900 text-zinc-500 border-zinc-700' },
 }
 
 export default async function SearchPage({ params }: Props) {

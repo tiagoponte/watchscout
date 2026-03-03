@@ -10,8 +10,7 @@ test.describe('Dashboard', () => {
   })
 
   test('should display two search cards', async ({ page }) => {
-    // Scope to main to exclude sidebar nav links
-    const cards = page.locator('main').locator('a[href*="/srch_"]')
+    const cards = page.locator('[data-testid="search-card"]')
     await expect(cards).toHaveCount(2)
   })
 
