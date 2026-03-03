@@ -60,36 +60,38 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
       className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
     >
       <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-600 transition-colors h-full">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-zinc-800 shrink-0">
+        {/* Header — custom div avoids CardHeader's grid interfering with overflow control */}
+        <div className="px-6 pt-6 pb-4">
+          <div className="flex items-start justify-between gap-3 overflow-hidden">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-800 shrink-0 mt-0.5">
                 {search.watchCategory
-                  ? <WatchIcon category={search.watchCategory} className="h-10 w-10 text-amber-400" />
-                  : <SearchIcon className="h-5 w-5 text-amber-400" />
+                  ? <WatchIcon category={search.watchCategory} className="h-7 w-7 text-amber-400" />
+                  : <SearchIcon className="h-4 w-4 text-amber-400" />
                 }
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-zinc-100 truncate">{search.name}</p>
+                <p className="font-semibold text-zinc-100 leading-snug line-clamp-2">{search.name}</p>
                 <div className="flex items-center gap-2 mt-1.5">
                   <Badge variant="outline" className={status.className}>
                     {status.label}
                   </Badge>
                   {criteria.referenceNumber && (
-                    <span className="text-xs text-zinc-500">Ref. {criteria.referenceNumber}</span>
+                    <span className="text-xs text-zinc-500 truncate">Ref. {criteria.referenceNumber}</span>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <div className="shrink-0 relative w-8 h-8 mt-0.5" onClick={(e) => e.stopPropagation()}>
+              <ChevronRight className="absolute inset-0 m-auto h-4 w-4 text-zinc-500 group-hover:opacity-0 transition-opacity" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label="Search actions"
-                    className="h-8 w-8 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute inset-0 h-8 w-8 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -112,10 +114,9 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
             </div>
           </div>
-        </CardHeader>
+        </div>
         <div className="mx-6 border-t border-zinc-800" />
         <CardContent className="space-y-2.5 pt-4">
           <div className="flex items-center justify-between text-sm">
