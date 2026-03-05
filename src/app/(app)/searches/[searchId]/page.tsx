@@ -60,7 +60,7 @@ export default async function SearchPage({ params }: Props) {
             <span>{rankings.length} listings</span>
           </div>
         </div>
-        <AddListingDialog />
+        <AddListingDialog searchId={searchId} />
       </div>
 
       {/* Criteria pills */}
@@ -89,7 +89,7 @@ export default async function SearchPage({ params }: Props) {
       {rankings.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 rounded-lg border border-zinc-800 text-center">
           <p className="text-zinc-500 mb-4">No listings added yet.</p>
-          <AddListingDialog />
+          <AddListingDialog searchId={searchId} />
         </div>
       ) : (
         <div className="rounded-lg border border-zinc-800 overflow-hidden">
