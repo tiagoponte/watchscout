@@ -34,6 +34,13 @@ const SELLER_TYPES = [
   { value: 'private', label: 'Private only' },
 ]
 
+const WATCH_CATEGORIES = [
+  { value: 'chronograph', label: 'Chronograph' },
+  { value: 'diver', label: 'Diver' },
+  { value: 'dress', label: 'Dress' },
+  { value: 'field', label: 'Field' },
+]
+
 const MUST_HAVE_SUGGESTIONS = [
   'Box or papers',
   'Full box and papers',
@@ -60,13 +67,16 @@ export default function NewSearchPage() {
   const [budgetMax, setBudgetMax] = useState('')
   const [currency, setCurrency] = useState('EUR')
   const [conditions, setConditions] = useState<string[]>(['mint', 'very_good', 'good'])
+  const [watchCategory, setWatchCategory] = useState('')
   const [sellerType, setSellerType] = useState('no_preference')
   const [mustHaveInput, setMustHaveInput] = useState('')
+  const [touched, setTouched] = useState({ modelName: false, budgetMin: false, budgetMax: false })
   const [mustHaves, setMustHaves] = useState<string[]>([])
   const [dealBreakerInput, setDealBreakerInput] = useState('')
   const [dealBreakers, setDealBreakers] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function toggleCondition(value: string) {
     setConditions((prev) =>
@@ -85,12 +95,14 @@ export default function NewSearchPage() {
   async function handleSubmit() {
     if (!modelName.trim() || !budgetMin || !budgetMax || submitting) return
     setSubmitting(true)
+    setError(null)
     try {
       const res = await fetch('/api/searches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: modelName.trim(),
+          watchCategory: watchCategory || undefined,
           criteria: {
             modelName: modelName.trim(),
             referenceNumber: referenceNumber.trim() || undefined,
@@ -105,8 +117,14 @@ export default function NewSearchPage() {
           },
         }),
       })
-      const search = await res.json()
-      if (res.ok) router.push(`/searches/${search.id}`)
+      const data = await res.json()
+      if (res.ok) {
+        router.push(`/searches/${data.id}`)
+      } else {
+        setError(data.error ?? 'Something went wrong. Please try again.')
+      }
+    } catch {
+      setError('Network error. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -150,9 +168,13 @@ export default function NewSearchPage() {
                 id="model-name"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, modelName: true }))}
                 placeholder="e.g. Omega Speedmaster Date"
-                className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
+                className={`bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 ${touched.modelName && !modelName.trim() ? 'border-red-500' : ''}`}
               />
+              {touched.modelName && !modelName.trim() && (
+                <p className="text-xs text-red-400">Required</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="ref-number" className="text-zinc-300">
@@ -167,6 +189,26 @@ export default function NewSearchPage() {
               />
             </div>
           </div>
+          <div className="space-y-2">
+            <Label className="text-zinc-300">Category</Label>
+            <div className="flex flex-wrap gap-2">
+              {WATCH_CATEGORIES.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setWatchCategory((prev) => prev === value ? '' : value)}
+                  aria-pressed={watchCategory === value}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    watchCategory === value
+                      ? 'bg-amber-400/10 border-amber-400/40 text-amber-400'
+                      : 'bg-zinc-900 border-zinc-700 text-zinc-500 hover:border-zinc-500'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <Separator className="bg-zinc-800" />
@@ -177,7 +219,7 @@ export default function NewSearchPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="budget-min" className="text-zinc-300">
-                Minimum
+                Minimum <span className="text-red-400">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500 pointer-events-none select-none">
@@ -188,14 +230,18 @@ export default function NewSearchPage() {
                   type="number"
                   value={budgetMin}
                   onChange={(e) => setBudgetMin(e.target.value)}
+                  onBlur={() => setTouched((t) => ({ ...t, budgetMin: true }))}
                   placeholder="2500"
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 pl-8"
+                  className={`bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 pl-8 ${touched.budgetMin && !budgetMin ? 'border-red-500' : ''}`}
                 />
               </div>
+              {touched.budgetMin && !budgetMin && (
+                <p className="text-xs text-red-400">Required</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="budget-max" className="text-zinc-300">
-                Maximum
+                Maximum <span className="text-red-400">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500 pointer-events-none select-none">
@@ -206,10 +252,14 @@ export default function NewSearchPage() {
                   type="number"
                   value={budgetMax}
                   onChange={(e) => setBudgetMax(e.target.value)}
+                  onBlur={() => setTouched((t) => ({ ...t, budgetMax: true }))}
                   placeholder="3500"
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 pl-8"
+                  className={`bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 pl-8 ${touched.budgetMax && !budgetMax ? 'border-red-500' : ''}`}
                 />
               </div>
+              {touched.budgetMax && !budgetMax && (
+                <p className="text-xs text-red-400">Required</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="text-zinc-300">Currency</Label>
@@ -261,18 +311,23 @@ export default function NewSearchPage() {
           <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
             Seller Preference
           </h2>
-          <Select value={sellerType} onValueChange={setSellerType}>
-            <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100 w-full sm:w-64">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700">
-              {SELLER_TYPES.map(({ value, label }) => (
-                <SelectItem key={value} value={value} className="text-zinc-100 focus:bg-zinc-800">
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            {SELLER_TYPES.map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSellerType(value)}
+                aria-pressed={sellerType === value}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  sellerType === value
+                    ? 'bg-amber-400/10 border-amber-400/40 text-amber-400'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-500 hover:border-zinc-500'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <Separator className="bg-zinc-800" />
@@ -282,7 +337,6 @@ export default function NewSearchPage() {
           <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
             Must Haves
           </h2>
-          {/* Suggestion chips */}
           <div className="flex flex-wrap gap-2">
             {MUST_HAVE_SUGGESTIONS.map((s) => {
               const selected = mustHaves.includes(s)
@@ -301,13 +355,12 @@ export default function NewSearchPage() {
                       : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  <Check className={`h-3 w-3 shrink-0 transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`} />
+                  {selected && <Check className="h-3 w-3 shrink-0" />}
                   {s}
                 </button>
               )
             })}
           </div>
-          {/* Custom input */}
           <div className="space-y-2">
             <Label htmlFor="must-have-input" className="text-xs text-zinc-500">
               Or add your own
@@ -331,7 +384,6 @@ export default function NewSearchPage() {
               </Button>
             </div>
           </div>
-          {/* Custom entries only — preset suggestions are shown in the chip grid above */}
           {mustHaves.filter((item) => !MUST_HAVE_SUGGESTIONS.includes(item)).length > 0 && (
             <div className="flex flex-wrap gap-2">
               {mustHaves
@@ -363,7 +415,6 @@ export default function NewSearchPage() {
           <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
             Deal Breakers
           </h2>
-          {/* Suggestion chips */}
           <div className="flex flex-wrap gap-2">
             {DEAL_BREAKER_SUGGESTIONS.map((s) => {
               const selected = dealBreakers.includes(s)
@@ -382,13 +433,12 @@ export default function NewSearchPage() {
                       : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  <Check className={`h-3 w-3 shrink-0 transition-opacity ${selected ? 'opacity-100' : 'opacity-0'}`} />
+                  {selected && <Check className="h-3 w-3 shrink-0" />}
                   {s}
                 </button>
               )
             })}
           </div>
-          {/* Custom input */}
           <div className="space-y-2">
             <Label htmlFor="deal-breaker-input" className="text-xs text-zinc-500">
               Or add your own
@@ -412,7 +462,6 @@ export default function NewSearchPage() {
               </Button>
             </div>
           </div>
-          {/* Custom entries only — preset suggestions are shown in the chip grid above */}
           {dealBreakers.filter((item) => !DEAL_BREAKER_SUGGESTIONS.includes(item)).length > 0 && (
             <div className="flex flex-wrap gap-2">
               {dealBreakers
@@ -453,21 +502,26 @@ export default function NewSearchPage() {
         </div>
 
         {/* Submit */}
-        <div className="flex items-center gap-3 pt-2">
-          <Button
-            className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold px-6"
-            disabled={!modelName.trim() || !budgetMin || !budgetMax || submitting}
-            onClick={handleSubmit}
-          >
-            {submitting ? 'Creating…' : 'Create Search'}
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-          >
-            <Link href="/dashboard">Cancel</Link>
-          </Button>
+        <div className="space-y-3 pt-2">
+          {error && (
+            <p className="text-sm text-red-400">{error}</p>
+          )}
+          <div className="flex items-center gap-3">
+            <Button
+              className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold px-6"
+              disabled={!modelName.trim() || !budgetMin || !budgetMax || submitting}
+              onClick={handleSubmit}
+            >
+              {submitting ? 'Creating…' : 'Create Search'}
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+            >
+              <Link href="/dashboard">Cancel</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

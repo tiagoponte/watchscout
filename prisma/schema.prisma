@@ -7,9 +7,28 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Tier {
+  FREE
+  SCOUT
+  PRO
+}
+
+model User {
+  id               String   @id   // matches Supabase auth UID
+  email            String   @unique
+  tier             Tier     @default(FREE)
+  stripeCustomerId String?  @unique
+  aiCallsToday     Int      @default(0)
+  aiCallsResetAt   DateTime @default(now())
+  searches         Search[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 model Search {
   id               String    @id
   userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name             String
   watchCategory    String?
   criteria         Json

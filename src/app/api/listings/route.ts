@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { extractFromHtml, extractFromImage } from '@/lib/claude'
+import { getApiUserContext } from '@/lib/server/get-user-id'
+import { extractFromHtml, extractFromImage, findRepresentativeImage } from '@/lib/claude'
 import { createListing, rerankListings } from '@/lib/db/listings'
+import { getSearch } from '@/lib/db/searches'
+import { canAddListing, canMakeAiCall, incrementAiCalls } from '@/lib/db/users'
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getApiUserContext()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json() as {
@@ -20,7 +21,25 @@ export async function POST(request: Request) {
     if (!searchId) return NextResponse.json({ error: 'searchId required' }, { status: 400 })
     if (!url && !imageBase64) return NextResponse.json({ error: 'url or imageBase64 required' }, { status: 400 })
 
-    // Extract listing data from URL or screenshot
+    const search = await getSearch(searchId, user.id)
+    if (!search) return NextResponse.json({ error: 'Search not found' }, { status: 404 })
+
+    const listingAllowed = await canAddListing(searchId, user.id)
+    if (!listingAllowed) {
+      return NextResponse.json(
+        { error: `Listing limit reached for your plan (${user.limits.listingsPerSearch} per search). Upgrade to add more.`, code: 'LIMIT_LISTINGS' },
+        { status: 403 },
+      )
+    }
+
+    const aiAllowed = await canMakeAiCall(user.id)
+    if (!aiAllowed) {
+      return NextResponse.json(
+        { error: `Daily AI limit reached (${user.limits.aiCallsPerDay} extractions/day). Resets at midnight UTC.`, code: 'LIMIT_AI' },
+        { status: 429 },
+      )
+    }
+
     let extracted
     if (url) {
       const res = await fetch(url, {
@@ -42,7 +61,27 @@ export async function POST(request: Request) {
       extracted = await extractFromImage(imageBase64!, mimeType ?? 'image/jpeg')
     }
 
-    // Save to DB and rerank
+    await incrementAiCalls(user.id)
+
+    // For screenshots: use the uploaded image itself as the photo
+    if (extracted.photos.length === 0 && imageBase64) {
+      extracted.photos = [`data:${mimeType ?? 'image/jpeg'};base64,${imageBase64}`]
+    }
+
+    // For URLs with no photos extracted: search for a representative image
+    if (extracted.photos.length === 0) {
+      const query = [search.criteria.modelName, extracted.referenceNumber.value]
+        .filter(Boolean)
+        .join(' ')
+      const repImage = await findRepresentativeImage(query)
+      if (repImage) extracted.photos = [repImage]
+    }
+
+    // Proxy external photo URLs through our server to bypass CDN hotlink protection
+    extracted.photos = extracted.photos.map((photoUrl) =>
+      photoUrl.startsWith('data:') ? photoUrl : `/api/image-proxy?url=${encodeURIComponent(photoUrl)}`
+    )
+
     const listing = await createListing(searchId, url, extracted)
     await rerankListings(searchId)
 

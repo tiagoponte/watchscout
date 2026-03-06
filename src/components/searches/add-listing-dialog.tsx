@@ -15,6 +15,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+// Resize and re-encode a screenshot as JPEG before sending to the API.
+// Keeps stored photos at a reasonable size (~100–200 KB as base64).
+function resizeImage(file: File, maxDim = 900): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1])
+    }
+    img.onerror = reject
+    img.src = objectUrl
+  })
+}
+
 interface Props {
   searchId: string
 }
@@ -55,14 +75,8 @@ export function AddListingDialog({ searchId }: Props) {
   }
 
   async function handleFile(file: File) {
-    const mimeType = file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
-    const imageBase64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve((reader.result as string).split(',')[1])
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-    await submit({ imageBase64, mimeType })
+    const imageBase64 = await resizeImage(file)
+    await submit({ imageBase64, mimeType: 'image/jpeg' })
   }
 
   return (

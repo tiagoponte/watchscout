@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import React from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, ImageOff, MoreHorizontal, Trash2 } from 'lucide-react'
 import { RankedListing } from '@/types'
@@ -32,6 +33,7 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
   const price = listing.askingPrice.value
   const currency = listing.currency.value ?? 'EUR'
   const router = useRouter()
+  const [imgError, setImgError] = React.useState(false)
   const href = `/searches/${searchId}/listings/${listing.id}`
 
   async function handleDelete(e: React.MouseEvent) {
@@ -54,13 +56,15 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
       <div className="flex items-center gap-2 shrink-0">
         <RankBadge rank={rank} delta={rankDelta} />
         <div className="w-12 h-12 rounded-md overflow-hidden bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-800">
-          {listing.photos.length > 0 ? (
+          {listing.photos.length > 0 && !imgError ? (
             <Image
               src={listing.photos[listing.thumbnailPhotoIndex ?? 0]}
               alt="Listing thumbnail"
               width={48}
               height={48}
               className="object-cover w-full h-full"
+              unoptimized
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center border border-dashed border-zinc-700 rounded-md bg-zinc-900">

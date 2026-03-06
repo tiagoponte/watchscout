@@ -1,13 +1,21 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getApiUserContext } from '@/lib/server/get-user-id'
 import { createSearch } from '@/lib/db/searches'
+import { canCreateSearch } from '@/lib/db/users'
 import { SearchCriteria, WatchCategory } from '@/types'
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getApiUserContext()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const allowed = await canCreateSearch(user.id)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: `Search limit reached for your plan (${user.limits.searches} max). Upgrade to create more.`, code: 'LIMIT_SEARCHES' },
+        { status: 403 },
+      )
+    }
 
     const body = await request.json()
     const { name, criteria, watchCategory } = body as {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Star } from 'lucide-react'
+import { ImageOff, Star } from 'lucide-react'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
@@ -15,10 +15,18 @@ interface PhotoGalleryProps {
 export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }: PhotoGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [thumbIdx, setThumbIdx] = useState(thumbnailIndex)
+  const [errors, setErrors] = useState<boolean[]>(() => Array(photos.length).fill(false))
 
-  if (photos.length === 0) {
+  function markError(i: number) {
+    setErrors(prev => { const next = [...prev]; next[i] = true; return next })
+  }
+
+  const visiblePhotos = photos.filter((_, i) => !errors[i])
+
+  if (photos.length === 0 || visiblePhotos.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-600 text-sm">
+      <div className="flex flex-col items-center justify-center h-32 gap-2 rounded-lg bg-zinc-900 border border-dashed border-zinc-800 text-zinc-600 text-sm">
+        <ImageOff className="h-5 w-5" />
         No photos available
       </div>
     )
@@ -28,7 +36,7 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
     <>
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex gap-3 pb-3">
-          {photos.map((src, i) => (
+          {photos.map((src, i) => errors[i] ? null : (
             <div key={i} className="relative shrink-0 w-48 h-36 group/photo">
               <button
                 onClick={() => setLightboxIndex(i)}
@@ -42,6 +50,8 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
                   fill
                   className="object-cover"
                   sizes="192px"
+                  unoptimized
+                  onError={() => markError(i)}
                 />
               </button>
               {/* Thumbnail star — sibling to photo button, not nested inside it */}
@@ -75,6 +85,8 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
                 fill
                 className="object-contain"
                 sizes="(max-width: 768px) 100vw, 768px"
+                unoptimized
+                onError={() => { markError(lightboxIndex); setLightboxIndex(null) }}
               />
             </div>
           )}

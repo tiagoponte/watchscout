@@ -133,7 +133,7 @@ const EXTRACT_TOOL: Anthropic.Tool = {
       },
       photos: {
         type: 'array',
-        description: 'Full URLs of all watch listing photos found on the page.',
+        description: 'Full URLs of all watch listing photos. Use the provided image URLs where relevant — include only watch/product photos, not icons, logos, or UI elements.',
         items: { type: 'string' },
       },
       seller: {
@@ -172,10 +172,46 @@ Confidence levels:
 - "claimed": seller claims it but it cannot be independently verified
 - "unknown": not found or ambiguous
 
-For photos: extract the full URLs of product/watch images. Exclude thumbnails of unrelated items, icons, or UI elements.
+For photos: use the image URLs provided in the prompt. Include only watch/product photos — exclude icons, logos, avatars, and UI elements. Prefer og:image and large product images.
 For condition: map platform-specific terms (e.g. "Like New"→mint, "Good"→good, "Unworn"→mint).
 For platform: infer from the URL or page content.
 Always call the save_listing tool with everything you find. Use null for values not found.`
+
+// Extract product image URLs from raw HTML before stripping tags
+function extractProductImages(html: string, baseUrl: string): string[] {
+  const urls: string[] = []
+
+  // og:image — most reliable, usually the main product photo
+  const ogMatch =
+    html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ??
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+  if (ogMatch?.[1]) urls.push(ogMatch[1])
+
+  // JSON-LD structured data images
+  for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const data = JSON.parse(m[1])
+      const imgs = Array.isArray(data.image) ? data.image : data.image ? [data.image] : []
+      for (const img of imgs) {
+        if (typeof img === 'string') urls.push(img)
+        else if (typeof img?.url === 'string') urls.push(img.url)
+      }
+    } catch { /* malformed JSON-LD */ }
+  }
+
+  // Prominent img tags — skip obvious non-product images
+  for (const m of html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*/gi)) {
+    const src = m[1]
+    if (!src || src.startsWith('data:')) continue
+    if (/\b(icon|logo|avatar|banner|pixel|spacer|sprite|svg)\b/i.test(src)) continue
+    try {
+      urls.push(src.startsWith('http') ? src : new URL(src, baseUrl).href)
+    } catch { /* relative URL resolution failed */ }
+    if (urls.length >= 15) break
+  }
+
+  return [...new Set(urls)]
+}
 
 function stripHtml(html: string): string {
   return html
@@ -193,7 +229,12 @@ function parseToolResult(message: Anthropic.Message): ExtractedListing {
 }
 
 export async function extractFromHtml(html: string, url: string): Promise<ExtractedListing> {
+  const imageUrls = extractProductImages(html, url)
   const text = stripHtml(html).slice(0, 60000)
+
+  const imageHint = imageUrls.length > 0
+    ? `\n\nImage URLs found on this page — include the watch product photos in the photos array:\n${imageUrls.slice(0, 10).join('\n')}`
+    : ''
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
@@ -204,12 +245,19 @@ export async function extractFromHtml(html: string, url: string): Promise<Extrac
     messages: [
       {
         role: 'user',
-        content: `Extract all watch listing data from this page.\n\nURL: ${url}\n\nPage text:\n${text}`,
+        content: `Extract all watch listing data from this page.\n\nURL: ${url}${imageHint}\n\nPage text:\n${text}`,
       },
     ],
   })
 
-  return parseToolResult(message)
+  const extracted = parseToolResult(message)
+
+  // If Claude didn't include photos but we found image URLs, use them directly
+  if (extracted.photos.length === 0 && imageUrls.length > 0) {
+    extracted.photos = imageUrls.slice(0, 8)
+  }
+
+  return extracted
 }
 
 export async function extractFromImage(
@@ -241,4 +289,30 @@ export async function extractFromImage(
   })
 
   return parseToolResult(message)
+}
+
+/**
+ * Fallback: search Bing Images for a representative photo of a watch
+ * given a query like "Seiko Prospex Marinemaster SJE101J1".
+ * Returns the first image URL found, or null if the search fails.
+ */
+export async function findRepresentativeImage(query: string): Promise<string | null> {
+  try {
+    const url = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&FORM=HDRSC2&first=1`
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(8000),
+    })
+    const html = await res.text()
+    // Bing embeds image data in JSON blobs — murl is the media URL (direct image link)
+    const match = html.match(/"murl":"([^"]+)"/)
+    if (match?.[1]) {
+      return match[1].replace(/\\u0026/g, '&').replace(/\\/g, '')
+    }
+  } catch { /* search failed — non-fatal */ }
+  return null
 }
