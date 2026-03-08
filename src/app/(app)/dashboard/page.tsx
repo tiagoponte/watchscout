@@ -3,14 +3,20 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SearchCard } from '@/components/dashboard/search-card'
 import { EmptyState } from '@/components/dashboard/empty-state'
+import { UpgradeBanner } from '@/components/dashboard/upgrade-banner'
 export const dynamic = 'force-dynamic'
 
 import { getSearches } from '@/lib/db/searches'
 import { getRankedListings } from '@/lib/db/listings'
 import { getUserContext } from '@/lib/server/get-user-id'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>
+}) {
   const { id: userId } = await getUserContext()
+  const { upgraded } = await searchParams
   const searches = await getSearches(userId)
   const searchesWithRankings = await Promise.all(
     searches.map(async (search) => {
@@ -21,6 +27,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
+      {upgraded === '1' && <UpgradeBanner />}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-zinc-100">Dashboard</h1>

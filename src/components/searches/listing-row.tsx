@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, ImageOff, MoreHorizontal, Trash2 } from 'lucide-react'
 import { RankedListing } from '@/types'
@@ -44,13 +45,10 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
   }
 
   return (
-    <div
-      role="link"
-      tabIndex={0}
-      onClick={() => router.push(href)}
-      onKeyDown={(e) => e.key === 'Enter' && router.push(href)}
+    <Link
+      href={href}
       data-testid="listing-row"
-      className="group flex items-center gap-4 px-4 py-3.5 border-b border-zinc-800 hover:bg-zinc-900 transition-colors cursor-pointer"
+      className="group flex items-center gap-4 px-4 py-3.5 border-b border-zinc-800 hover:bg-zinc-900 transition-colors"
     >
       {/* Rank + thumbnail — compound identity unit */}
       <div className="flex items-center gap-2 shrink-0">
@@ -133,7 +131,7 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
         <div className="hidden sm:block w-24">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="cursor-default" onClick={(e) => e.stopPropagation()}>
+              <div className="cursor-default">
                 <p className="text-xs text-zinc-500 mb-1">Score</p>
                 <ScoreBar score={compositeScore} />
               </div>
@@ -145,7 +143,7 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
           {listing.riskScore != null && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="mt-2 cursor-default" onClick={(e) => e.stopPropagation()}>
+                <div className="mt-2 cursor-default">
                   <p className="text-xs text-zinc-500 mb-1">Risk</p>
                   <ScoreBar score={listing.riskScore} variant="risk" />
                 </div>
@@ -185,6 +183,6 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
         </div>
         <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-zinc-400 transition-colors p-0 mr-0" />
       </div>
-    </div>
+    </Link>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search as SearchIcon, ChevronRight, Shield, MoreHorizontal, Archive, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -51,13 +52,10 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
   }
 
   return (
-    <div
-      role="link"
-      tabIndex={0}
+    <Link
+      href={href}
       data-testid="search-card"
-      onClick={() => router.push(href)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push(href) }}
-      className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
+      className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
     >
       <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-600 transition-colors h-full">
         {/* Header — custom div avoids CardHeader's grid interfering with overflow control */}
@@ -198,6 +196,6 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
           )}
         </CardContent>
       </Card>
-    </div>
+    </Link>
   )
 }

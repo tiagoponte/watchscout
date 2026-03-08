@@ -31,11 +31,12 @@ export async function middleware(request: NextRequest) {
   // Refresh session — must not run getSession() here, getUser() is required for security
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuthRoute =
+  const isPublicRoute =
+    request.nextUrl.pathname === '/' ||
     request.nextUrl.pathname.startsWith('/login') ||
     request.nextUrl.pathname.startsWith('/auth')
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

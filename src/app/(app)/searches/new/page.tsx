@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { UpgradeDialog } from '@/components/upgrade-dialog'
 
 const CONDITIONS = [
   { value: 'mint', label: 'Mint' },
@@ -79,6 +80,7 @@ export default function NewSearchPage() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [upgradeReason, setUpgradeReason] = useState<'LIMIT_SEARCHES' | 'LIMIT_LISTINGS' | 'LIMIT_AI' | null>(null)
 
   function toggleCondition(value: string) {
     setConditions((prev) =>
@@ -122,6 +124,8 @@ export default function NewSearchPage() {
       const data = await res.json()
       if (res.ok) {
         router.push(`/searches/${data.id}`)
+      } else if (data.code === 'LIMIT_SEARCHES') {
+        setUpgradeReason('LIMIT_SEARCHES')
       } else {
         setError(data.error ?? 'Something went wrong. Please try again.')
       }
@@ -141,6 +145,12 @@ export default function NewSearchPage() {
   }
 
   return (
+    <>
+    <UpgradeDialog
+      open={!!upgradeReason}
+      onClose={() => setUpgradeReason(null)}
+      reason={upgradeReason ?? undefined}
+    />
     <div className="max-w-2xl mx-auto">
       <Link
         href="/dashboard"
@@ -532,5 +542,6 @@ export default function NewSearchPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }

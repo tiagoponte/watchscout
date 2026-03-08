@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { UpgradeDialog } from '@/components/upgrade-dialog'
 
 // Resize and re-encode a screenshot as JPEG before sending to the API.
 // Keeps stored photos at a reasonable size (~100–200 KB as base64).
@@ -46,6 +47,7 @@ export function AddListingDialog({ searchId }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [upgradeReason, setUpgradeReason] = useState<'LIMIT_SEARCHES' | 'LIMIT_LISTINGS' | 'LIMIT_AI' | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function submit(body: object) {
@@ -59,7 +61,11 @@ export function AddListingDialog({ searchId }: Props) {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? 'Something went wrong.')
+        if (data.code === 'LIMIT_LISTINGS' || data.code === 'LIMIT_AI') {
+          setUpgradeReason(data.code)
+        } else {
+          setError(data.error ?? 'Something went wrong.')
+        }
         return
       }
       setOpen(false)
@@ -80,6 +86,12 @@ export function AddListingDialog({ searchId }: Props) {
   }
 
   return (
+    <>
+    <UpgradeDialog
+      open={!!upgradeReason}
+      onClose={() => setUpgradeReason(null)}
+      reason={upgradeReason ?? undefined}
+    />
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); setError(null) }}>
       <DialogTrigger asChild>
         <Button className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold">
@@ -178,5 +190,6 @@ export function AddListingDialog({ searchId }: Props) {
         </Tabs>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

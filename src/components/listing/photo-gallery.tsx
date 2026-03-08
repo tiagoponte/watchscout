@@ -39,8 +39,8 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
           {photos.map((src, i) => (
             <div key={i} className="relative shrink-0 w-48 h-36 group/photo">
               <button
-                onClick={() => !errors[i] && setLightboxIndex(i)}
-                className={`block w-full h-full rounded-lg overflow-hidden border bg-zinc-900 hover:border-zinc-600 transition-colors cursor-zoom-in ${
+                onClick={() => setLightboxIndex(i)}
+                className={`relative block w-full h-full rounded-lg overflow-hidden border bg-zinc-900 hover:border-zinc-600 transition-colors cursor-zoom-in ${
                   i === thumbIdx ? 'border-amber-400/60' : 'border-zinc-800'
                 }`}
               >
@@ -52,9 +52,9 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
                   <Image
                     src={src}
                     alt={`${alt} ${i + 1}`}
-                    fill
-                    className="object-cover pointer-events-none"
-                    sizes="192px"
+                    width={192}
+                    height={144}
+                    className="object-cover pointer-events-none w-full h-full"
                     unoptimized
                     onError={() => markError(i)}
                   />
