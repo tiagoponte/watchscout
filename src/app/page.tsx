@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
 import { Check } from 'lucide-react'
 import { WatchIcon } from '@/components/ui/watch-icon'
 import { createClient } from '@/lib/supabase/server'
