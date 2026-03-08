@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getApiUserContext } from '@/lib/server/get-user-id'
-import { stripe, STRIPE_PRICE_IDS } from '@/lib/stripe'
+import { getStripe, STRIPE_PRICE_IDS } from '@/lib/stripe'
 import type { Tier } from '@/lib/plans'
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     const origin = request.headers.get('origin') ?? 'https://watchscout.vercel.app'
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: user.email,
