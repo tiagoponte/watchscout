@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CardSectionProps {
   title: string
+  id?: string
   defaultOpen?: boolean
   children: React.ReactNode
   className?: string
@@ -13,14 +14,29 @@ interface CardSectionProps {
 
 export function CardSection({
   title,
+  id,
   defaultOpen = true,
   children,
   className,
 }: CardSectionProps) {
   const [open, setOpen] = useState(defaultOpen)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!id) return
+    function handleHash() {
+      if (window.location.hash === `#${id}`) {
+        setOpen(true)
+        wrapperRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+    handleHash()
+    window.addEventListener('hashchange', handleHash)
+    return () => window.removeEventListener('hashchange', handleHash)
+  }, [id])
 
   return (
-    <div className={cn('border border-zinc-800 rounded-lg overflow-hidden', className)}>
+    <div ref={wrapperRef} id={id} className={cn('border border-zinc-800 rounded-lg overflow-hidden', className)}>
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900 hover:bg-zinc-800/60 transition-colors text-left"

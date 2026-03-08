@@ -6,7 +6,8 @@ import { DataField } from './data-field'
 import { ConfidenceIndicator } from './confidence-indicator'
 import { PhotoGallery } from './photo-gallery'
 import { QuestionnairePanel } from './questionnaire-panel'
-import { ScoreBar } from '@/components/searches/score-bar'
+import { ScoringPanel } from './scoring-panel'
+import { OfferSuggestionPanel } from './offer-suggestion'
 import { RankBadge } from '@/components/searches/rank-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,18 +40,6 @@ const serviceLabels: Record<string, string> = {
   unknown: 'Unknown',
 }
 
-const factorKeys = [
-  { key: 'allInPrice', label: 'All-in Price', weight: 0.25 },
-  { key: 'serviceRecency', label: 'Service Recency', weight: 0.20 },
-  { key: 'polishingStatus', label: 'Polishing Status', weight: 0.15 },
-  { key: 'conditionGrade', label: 'Condition Grade', weight: 0.10 },
-  { key: 'boxAndPapers', label: 'Box & Papers', weight: 0.10 },
-  { key: 'sellerReputation', label: 'Seller Reputation', weight: 0.08 },
-  { key: 'platformProtection', label: 'Platform Protection', weight: 0.05 },
-  { key: 'returnsPolicy', label: 'Returns Policy', weight: 0.04 },
-  { key: 'sellerResponsiveness', label: 'Responsiveness', weight: 0.02 },
-  { key: 'warrantyRemaining', label: 'Warranty Remaining', weight: 0.01 },
-] as const
 
 export function IntelligenceCard({ rankedListing, searchId, watchName }: IntelligenceCardProps) {
   const { listing, rank, compositeScore, factorScores, rankDelta } = rankedListing
@@ -82,6 +71,11 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
               {listing.referenceNumber.value && (
                 <span className="text-sm text-zinc-500">
                   Ref. {listing.referenceNumber.value}
+                </span>
+              )}
+              {listing.manufactureYear.value != null && (
+                <span className="text-sm text-zinc-500">
+                  {listing.manufactureYear.value}
                 </span>
               )}
             </div>
@@ -121,17 +115,24 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             asChild
             className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold"
           >
             <a href="#questionnaire">Contact Seller</a>
           </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="border-zinc-700 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 hover:border-zinc-600"
+          >
+            <a href="#scoring">Adjust Scoring</a>
+          </Button>
         </div>
       </div>
 
-      {/* Section 1: Overview */}
+      {/* Section 1: Overview — always open on page load */}
       <CardSection title="Overview">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
@@ -189,15 +190,31 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
             {listing.notes}
           </p>
         )}
+        <OfferSuggestionPanel listingId={listing.id} searchId={searchId} currency={currency} />
       </CardSection>
 
-      {/* Section 2: Photos */}
+      {/* Section 2: Questionnaire */}
+      <CardSection id="questionnaire" title="Questionnaire" defaultOpen={false}>
+        <QuestionnairePanel listing={listing} searchId={searchId} />
+      </CardSection>
+
+      {/* Section 3: Scoring Breakdown */}
+      <CardSection id="scoring" title="Scoring Breakdown" defaultOpen={false}>
+        <ScoringPanel
+          initialFactorScores={factorScores}
+          initialCompositeScore={compositeScore}
+          listingId={listing.id}
+          searchId={searchId}
+        />
+      </CardSection>
+
+      {/* Section 4: Photos */}
       <CardSection title="Photos">
         <PhotoGallery photos={listing.photos} alt={`Listing ${listing.id}`} thumbnailIndex={listing.thumbnailPhotoIndex ?? 0} />
       </CardSection>
 
-      {/* Section 3: Condition & Accessories */}
-      <CardSection title="Condition & Accessories">
+      {/* Section 5: Condition & Accessories */}
+      <CardSection title="Condition & Accessories" defaultOpen={false}>
         {/* Condition + Polishing — side by side, badge-level */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
@@ -271,8 +288,8 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
         )}
       </CardSection>
 
-      {/* Section 3: Service History */}
-      <CardSection title="Service History">
+      {/* Section 6: Service History */}
+      <CardSection title="Service History" defaultOpen={false}>
         <DataField
           label="Last Service Year"
           value={listing.lastServiceYear.value?.toString() ?? null}
@@ -307,8 +324,8 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
         />
       </CardSection>
 
-      {/* Section 4: Seller Details */}
-      <CardSection title="Seller Details">
+      {/* Section 7: Seller Details */}
+      <CardSection title="Seller Details" defaultOpen={false}>
         <DataField
           label="Name"
           value={seller?.name ?? null}
@@ -357,47 +374,6 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
         />
       </CardSection>
 
-      {/* Section 5: Scoring Breakdown */}
-      <CardSection title="Scoring Breakdown" defaultOpen={false}>
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 gap-y-0 text-xs text-zinc-500 uppercase tracking-wider pb-2 border-b border-zinc-800 font-semibold">
-            <span>Factor</span>
-            <span className="text-right w-12">Weight</span>
-            <span className="text-right w-20">Score</span>
-          </div>
-          {factorKeys.map(({ key, label, weight }) => {
-            const score = factorScores[key]
-            return (
-              <div key={key} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4">
-                <div>
-                  <p className="text-sm text-zinc-300">{label}</p>
-                  <ScoreBar score={score} showLabel={false} className="mt-1" />
-                </div>
-                <span className="text-xs text-zinc-600 tabular-nums text-right w-12">
-                  {Math.round(weight * 100)}%
-                </span>
-                <span className={`text-sm font-semibold tabular-nums text-right w-20 ${getScoreColor(score)}`}>
-                  {score}
-                </span>
-              </div>
-            )
-          })}
-          <div className="flex items-center justify-between pt-3 border-t border-zinc-700 mt-2">
-            <span className="text-sm font-bold text-zinc-200">Composite Score</span>
-            <span className={`text-xl font-bold tabular-nums ${getScoreColor(compositeScore)}`}>
-              {compositeScore}
-              <span className="text-sm text-zinc-600 font-normal ml-0.5">/100</span>
-            </span>
-          </div>
-        </div>
-      </CardSection>
-
-      {/* Section 6: Questionnaire */}
-      <div id="questionnaire">
-        <CardSection title="Questionnaire" defaultOpen={!!listing.contactedAt}>
-          <QuestionnairePanel />
-        </CardSection>
-      </div>
     </div>
   )
 }

@@ -32,6 +32,12 @@ function factorScores(listing: ListingCard, minPrice: number, maxPrice: number):
   const shipping = listing.shippingCost.value ?? 0
   const allIn = price + shipping
 
+  const currentYear = new Date().getFullYear()
+  const watchAge = listing.manufactureYear.value != null
+    ? currentYear - listing.manufactureYear.value
+    : null
+  const isNewWatch = watchAge !== null && watchAge <= 2
+
   const items = listing.includedItems.value
   const boxAndPapers = (() => {
     if (!items) return 30
@@ -49,12 +55,38 @@ function factorScores(listing: ListingCard, minPrice: number, maxPrice: number):
     ? Math.min(100, Math.round((warrantyMonths / 24) * 100))
     : 0
 
+  // Service recency: irrelevant for watches ≤2 years old (score as 100).
+  // Once data is available, score by years since last service.
+  const serviceRecency = (() => {
+    if (isNewWatch) return 100
+    const year = listing.lastServiceYear.value
+    if (listing.lastServiceYear.confidence === 'pending') return 50
+    if (!year) return 20
+    const yearsAgo = currentYear - year
+    if (yearsAgo <= 2) return 100
+    if (yearsAgo <= 4) return 80
+    if (yearsAgo <= 6) return 60
+    if (yearsAgo <= 8) return 40
+    return 20
+  })()
+
+  // Polishing: new watches are unlikely to have been polished — score neutral-high.
+  // Once data is available, penalise accordingly.
+  const polishingScore = (() => {
+    const status = listing.polishingStatus.value
+    if (listing.polishingStatus.confidence === 'pending') return isNewWatch ? 70 : 50
+    if (status === 'unpolished') return 100
+    if (status === 'light_polish') return 40
+    if (status === 'heavily_polished') return 0
+    return 50 // unknown
+  })()
+
   return {
     allInPrice: priceScore(allIn, minPrice, maxPrice),
     conditionGrade: CONDITION_SCORE[listing.conditionRating.value ?? ''] ?? 50,
-    serviceRecency: 50,      // unknown until questionnaire
+    serviceRecency,
     boxAndPapers,
-    polishingStatus: 50,     // unknown until questionnaire
+    polishingStatus: polishingScore,
     sellerReputation,
     platformProtection: listing.platformProtection.value === true ? 80
       : listing.platformProtection.value === false ? 20 : 50,

@@ -42,6 +42,8 @@ const WATCH_CATEGORIES = [
 ]
 
 const MUST_HAVE_SUGGESTIONS = [
+  'Box',
+  'Papers',
   'Box or papers',
   'Full box and papers',
   'Unpolished case',
@@ -191,17 +193,17 @@ export default function NewSearchPage() {
           </div>
           <div className="space-y-2">
             <Label className="text-zinc-300">Category</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="inline-flex rounded-md border border-zinc-700 overflow-hidden">
               {WATCH_CATEGORIES.map(({ value, label }) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setWatchCategory((prev) => prev === value ? '' : value)}
                   aria-pressed={watchCategory === value}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-zinc-700 first:border-l-0 ${
                     watchCategory === value
-                      ? 'bg-amber-400/10 border-amber-400/40 text-amber-400'
-                      : 'bg-zinc-900 border-zinc-700 text-zinc-500 hover:border-zinc-500'
+                      ? 'bg-zinc-700 text-zinc-100'
+                      : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
                   }`}
                 >
                   {label}
@@ -311,17 +313,17 @@ export default function NewSearchPage() {
           <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
             Seller Preference
           </h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="inline-flex rounded-md border border-zinc-700 overflow-hidden">
             {SELLER_TYPES.map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setSellerType(value)}
                 aria-pressed={sellerType === value}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-zinc-700 first:border-l-0 ${
                   sellerType === value
-                    ? 'bg-amber-400/10 border-amber-400/40 text-amber-400'
-                    : 'bg-zinc-900 border-zinc-700 text-zinc-500 hover:border-zinc-500'
+                    ? 'bg-zinc-700 text-zinc-100'
+                    : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
                 }`}
               >
                 {label}
@@ -349,13 +351,14 @@ export default function NewSearchPage() {
                     )
                   }
                   aria-pressed={selected}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  className={`group/chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     selected
                       ? 'bg-emerald-950/40 border-emerald-700 text-emerald-400'
                       : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  {selected && <Check className="h-3 w-3 shrink-0" />}
+                  {selected && <Check className="h-3 w-3 shrink-0 hidden sm:block sm:group-hover/chip:hidden" />}
+                  {selected && <X className="h-3 w-3 shrink-0 block sm:hidden sm:group-hover/chip:block" />}
                   {s}
                 </button>
               )
@@ -427,13 +430,14 @@ export default function NewSearchPage() {
                     )
                   }
                   aria-pressed={selected}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                  className={`group/chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     selected
                       ? 'bg-red-950/40 border-red-700 text-red-400'
                       : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  {selected && <Check className="h-3 w-3 shrink-0" />}
+                  {selected && <Check className="h-3 w-3 shrink-0 hidden sm:block sm:group-hover/chip:hidden" />}
+                  {selected && <X className="h-3 w-3 shrink-0 block sm:hidden sm:group-hover/chip:block" />}
                   {s}
                 </button>
               )
@@ -505,6 +509,9 @@ export default function NewSearchPage() {
         <div className="space-y-3 pt-2">
           {error && (
             <p className="text-sm text-red-400">{error}</p>
+          )}
+          {(!modelName.trim() || !budgetMin || !budgetMax) && (
+            <p className="text-xs text-zinc-500">Enter a model name and budget to continue.</p>
           )}
           <div className="flex items-center gap-3">
             <Button

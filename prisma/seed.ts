@@ -24,7 +24,7 @@ async function main() {
 
   await prisma.search.upsert({
     where: { id: 'srch_speedmaster_01' },
-    update: {},
+    update: { userId: SEED_USER_ID },
     create: {
       id: 'srch_speedmaster_01',
       userId: SEED_USER_ID,
@@ -51,7 +51,7 @@ async function main() {
 
   await prisma.search.upsert({
     where: { id: 'srch_datejust_01' },
-    update: {},
+    update: { userId: SEED_USER_ID },
     create: {
       id: 'srch_datejust_01',
       userId: SEED_USER_ID,

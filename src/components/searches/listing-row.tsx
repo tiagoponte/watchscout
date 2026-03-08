@@ -62,7 +62,7 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
               alt="Listing thumbnail"
               width={48}
               height={48}
-              className="object-cover w-full h-full"
+              className="object-contain w-full h-full"
               unoptimized
               onError={() => setImgError(true)}
             />

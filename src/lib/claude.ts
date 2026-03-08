@@ -1,7 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { CardField, ConditionRating, IncludedItems, SellerInfo, Platform } from '@/types'
+import type { CardField, ConditionRating, IncludedItems, SellerInfo, Platform, ListingCard, PolishingStatus, ServiceType } from '@/types'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+export interface WatchRegion {
+  xPercent: number
+  yPercent: number
+  widthPercent: number
+  heightPercent: number
+}
 
 export interface ExtractedListing {
   platform: Platform
@@ -17,6 +24,10 @@ export interface ExtractedListing {
   platformProtection: CardField<boolean>
   photos: string[]
   seller: CardField<SellerInfo>
+  manufactureYear: CardField<number>
+  listingLanguage?: string
+  braceletType?: 'bracelet' | 'strap'
+  watchRegion?: WatchRegion
 }
 
 // Tool schema for structured extraction
@@ -156,11 +167,41 @@ const EXTRACT_TOOL: Anthropic.Tool = {
         },
         required: ['value', 'confidence'],
       },
+      manufactureYear: {
+        type: 'object',
+        description: 'Year the watch was manufactured or purchased new (e.g. 2019, 2024). Look for production year, purchase year, or "unworn/new old stock" indicators.',
+        properties: {
+          value: { type: ['number', 'null'] },
+          confidence: { type: 'string', enum: ['confirmed', 'claimed', 'unknown'] },
+          notes: { type: ['string', 'null'] },
+        },
+        required: ['value', 'confidence'],
+      },
+      listingLanguage: {
+        type: 'string',
+        description: 'Language the SELLER wrote the listing description in (e.g. "Spanish", "German", "French", "English"). Focus only on seller-authored text (item description, seller notes) — ignore platform UI labels, navigation, and boilerplate.',
+      },
+      braceletType: {
+        type: 'string',
+        enum: ['bracelet', 'strap'],
+        description: 'Whether the watch is fitted with a metal bracelet or a strap (leather, rubber, fabric, NATO, etc.). Infer from the listing description, photos, or watch reference.',
+      },
+      watchRegion: {
+        type: 'object',
+        description: 'For screenshots only: bounding box of the watch in the image, as percentages (0–100) of image width/height. Include generous padding around the watch. Omit for URL-sourced HTML.',
+        properties: {
+          xPercent:      { type: 'number', description: 'Left edge of watch as % of image width' },
+          yPercent:      { type: 'number', description: 'Top edge of watch as % of image height' },
+          widthPercent:  { type: 'number', description: 'Width of watch region as % of image width' },
+          heightPercent: { type: 'number', description: 'Height of watch region as % of image height' },
+        },
+        required: ['xPercent', 'yPercent', 'widthPercent', 'heightPercent'],
+      },
     },
     required: [
       'platform', 'referenceNumber', 'askingPrice', 'currency', 'shippingCost',
       'conditionRating', 'includedItems', 'sellerWarrantyMonths', 'returnsPolicy',
-      'platformProtection', 'photos', 'seller',
+      'platformProtection', 'photos', 'seller', 'manufactureYear',
     ],
   },
 }
@@ -173,8 +214,10 @@ Confidence levels:
 - "unknown": not found or ambiguous
 
 For photos: use the image URLs provided in the prompt. Include only watch/product photos — exclude icons, logos, avatars, and UI elements. Prefer og:image and large product images.
+For watchRegion: when processing a screenshot, identify the bounding box of the watch (case, dial, strap) in the image. Include generous padding (~10% on each side). Return percentages relative to the full image dimensions. Omit this field when processing HTML/URL content.
 For condition: map platform-specific terms (e.g. "Like New"→mint, "Good"→good, "Unworn"→mint).
 For platform: infer from the URL or page content.
+For listingLanguage: identify the language the SELLER used to write their listing description and notes — ignore platform UI text, navigation labels, and boilerplate. Set to "English", "Spanish", "German", "French", "Italian", "Dutch", "Japanese", etc. If the seller description is absent or clearly in English, set to "English".
 Always call the save_listing tool with everything you find. Use null for values not found.`
 
 // Extract product image URLs from raw HTML before stripping tags
@@ -267,7 +310,7 @@ export async function extractFromImage(
 ): Promise<ExtractedListing> {
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 2048,
+    max_tokens: 4096,
     system: SYSTEM_PROMPT,
     tools: [EXTRACT_TOOL],
     tool_choice: { type: 'tool', name: 'save_listing' },
@@ -289,6 +332,306 @@ export async function extractFromImage(
   })
 
   return parseToolResult(message)
+}
+
+// Tool schema for offer suggestion
+const OFFER_TOOL: Anthropic.Tool = {
+  name: 'save_offer_suggestion',
+  description: 'Save the structured offer suggestion based on market analysis.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      marketValue: {
+        type: 'number',
+        description: 'Estimated fair market value in the listing currency.',
+      },
+      suggestedOffer: {
+        type: 'number',
+        description: 'Recommended opening offer price — realistic but leaves room to negotiate.',
+      },
+      lowOffer: {
+        type: 'number',
+        description: 'Lowest reasonable offer that a serious seller would still consider.',
+      },
+      reasoning: {
+        type: 'string',
+        description: 'One or two sentences explaining the valuation and offer strategy.',
+      },
+    },
+    required: ['marketValue', 'suggestedOffer', 'lowOffer', 'reasoning'],
+  },
+}
+
+export interface OfferSuggestion {
+  marketValue: number
+  suggestedOffer: number
+  lowOffer: number
+  reasoning: string
+}
+
+export async function generateOfferSuggestion(
+  watchName: string,
+  listing: ListingCard,
+): Promise<OfferSuggestion> {
+  const currency = listing.currency.value ?? 'EUR'
+  const items = listing.includedItems.value
+  const context = [
+    `Watch: ${watchName}`,
+    listing.referenceNumber.value ? `Reference: ${listing.referenceNumber.value}` : null,
+    `Asking price: ${listing.askingPrice.value} ${currency}`,
+    listing.conditionRating.value ? `Condition: ${listing.conditionRating.value}` : null,
+    listing.manufactureYear.value ? `Year: ${listing.manufactureYear.value}` : null,
+    items ? `Box: ${items.box ? 'yes' : 'no'}, Papers: ${items.papers ? 'yes' : 'no'}` : null,
+    listing.seller.value ? `Seller: ${listing.seller.value.type}` : null,
+    listing.polishingStatus.value && listing.polishingStatus.value !== 'unknown'
+      ? `Polishing: ${listing.polishingStatus.value}` : null,
+    listing.lastServiceYear.value ? `Last serviced: ${listing.lastServiceYear.value}` : null,
+  ].filter(Boolean).join('\n')
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 512,
+    system: `You are an expert pre-owned luxury watch market analyst.
+Based on the listing details, estimate the fair market value and suggest an offer strategy.
+Use your knowledge of current secondary market prices for this reference.
+Be realistic — don't lowball aggressively, but leave room to negotiate.
+Always call save_offer_suggestion.`,
+    tools: [OFFER_TOOL],
+    tool_choice: { type: 'tool', name: 'save_offer_suggestion' },
+    messages: [{ role: 'user', content: context }],
+  })
+
+  const toolUse = message.content.find(b => b.type === 'tool_use')
+  if (!toolUse || toolUse.type !== 'tool_use') throw new Error('Claude did not call the offer tool')
+  return toolUse.input as OfferSuggestion
+}
+
+// Tool schema for questionnaire generation (structured, bilingual output)
+const QUESTIONNAIRE_TOOL: Anthropic.Tool = {
+  name: 'save_questionnaire',
+  description: 'Save the generated questionnaire in both the seller\'s language and English.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      detectedLanguage: {
+        type: 'string',
+        description: 'The language the seller message is written in, e.g. "German", "French", "English".',
+      },
+      sellerText: {
+        type: 'string',
+        description: 'The questionnaire message written in the seller\'s detected language.',
+      },
+      englishText: {
+        type: 'string',
+        description: 'English translation of the message. If the seller language is English, repeat the same text.',
+      },
+    },
+    required: ['detectedLanguage', 'sellerText', 'englishText'],
+  },
+}
+
+export interface GeneratedQuestionnaire {
+  detectedLanguage: string
+  sellerText: string
+  englishText: string
+}
+
+// Tool schema for parsing seller questionnaire responses
+const PARSE_RESPONSE_TOOL: Anthropic.Tool = {
+  name: 'save_questionnaire_answers',
+  description: 'Save structured answers extracted from the seller\'s response.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      polishingStatus: {
+        type: 'object',
+        description: 'Whether the case/bracelet has been polished.',
+        properties: {
+          value: { type: ['string', 'null'], enum: ['unpolished', 'light_polish', 'heavily_polished', 'unknown', null] },
+          confidence: { type: 'string', enum: ['confirmed', 'claimed', 'unknown'] },
+          notes: { type: ['string', 'null'] },
+        },
+        required: ['value', 'confidence'],
+      },
+      lastServiceYear: {
+        type: 'object',
+        description: 'Year the watch was last serviced.',
+        properties: {
+          value: { type: ['number', 'null'] },
+          confidence: { type: 'string', enum: ['confirmed', 'claimed', 'unknown'] },
+          notes: { type: ['string', 'null'] },
+        },
+        required: ['value', 'confidence'],
+      },
+      lastServiceType: {
+        type: 'object',
+        description: 'Type of service performed.',
+        properties: {
+          value: { type: ['string', 'null'], enum: ['full_service', 'partial_service', 'unknown', null] },
+          confidence: { type: 'string', enum: ['confirmed', 'claimed', 'unknown'] },
+        },
+        required: ['value', 'confidence'],
+      },
+      partsReplaced: {
+        type: 'object',
+        description: 'Parts replaced during service (e.g. crystal, crown, hands).',
+        properties: {
+          value: { type: ['array', 'null'], items: { type: 'string' } },
+          confidence: { type: 'string', enum: ['confirmed', 'claimed', 'unknown'] },
+          notes: { type: ['string', 'null'] },
+        },
+        required: ['value', 'confidence'],
+      },
+      braceletSizingInfo: {
+        type: 'object',
+        description: 'Bracelet sizing information: wrist size, spare links, etc.',
+        properties: {
+          value: { type: ['string', 'null'] },
+          confidence: { type: 'string', enum: ['confirmed', 'claimed', 'unknown'] },
+        },
+        required: ['value', 'confidence'],
+      },
+      actualShippingToUser: {
+        type: 'object',
+        description: 'Actual shipping cost quoted by seller, as a number. 0 if free.',
+        properties: {
+          value: { type: ['number', 'null'] },
+          confidence: { type: 'string', enum: ['confirmed', 'claimed', 'unknown'] },
+          notes: { type: ['string', 'null'] },
+        },
+        required: ['value', 'confidence'],
+      },
+    },
+    required: ['polishingStatus', 'lastServiceYear', 'lastServiceType', 'partsReplaced', 'braceletSizingInfo', 'actualShippingToUser'],
+  },
+}
+
+export interface ParsedSellerResponse {
+  polishingStatus: CardField<PolishingStatus>
+  lastServiceYear: CardField<number>
+  lastServiceType: CardField<ServiceType>
+  partsReplaced: CardField<string[]>
+  braceletSizingInfo: CardField<string>
+  actualShippingToUser: CardField<number>
+}
+
+export async function generateQuestionnaire(
+  watchName: string,
+  listing: ListingCard,
+  sellerLanguage?: string,
+): Promise<GeneratedQuestionnaire> {
+  const knownFacts: string[] = []
+  if (listing.referenceNumber.value) knownFacts.push(`Reference: ${listing.referenceNumber.value}`)
+  if (listing.conditionRating.value) knownFacts.push(`Stated condition: ${listing.conditionRating.value}`)
+  const items = listing.includedItems.value
+  if (items?.box != null) knownFacts.push(`Box: ${items.box ? 'yes' : 'no'}`)
+  if (items?.papers != null) knownFacts.push(`Papers: ${items.papers ? 'yes' : 'no'}`)
+
+  const currentYear = new Date().getFullYear()
+  const watchAge = listing.manufactureYear.value != null
+    ? currentYear - listing.manufactureYear.value
+    : null
+  const isNewWatch = watchAge !== null && watchAge <= 2
+
+  const askAbout: string[] = []
+  if (!isNewWatch && listing.polishingStatus.confidence === 'pending')
+    askAbout.push('polishing history — has the case or bracelet ever been polished by a jeweller or watchmaker?')
+  if (!isNewWatch) {
+    if (listing.lastServiceYear.confidence === 'pending')
+      askAbout.push('last service date, who performed it, and whether service documents are available')
+    if (listing.partsReplaced.confidence === 'pending')
+      askAbout.push('any parts replaced during service (e.g. crystal, crown, pushers, hands)')
+  }
+  const isBraceletWatch = listing.braceletType === 'bracelet'
+  if (isBraceletWatch && listing.braceletSizingInfo.confidence === 'pending')
+    askAbout.push('bracelet sizing: current fitted wrist size and how many spare links are included')
+  if (listing.shippingCost.confidence !== 'confirmed')
+    askAbout.push('exact shipping cost to the buyer')
+
+  // Language cues: explicit override > detected listing language > URL domain, seller name, platform
+  const effectiveLanguage = sellerLanguage || listing.listingLanguage
+  const langCues = [
+    effectiveLanguage ? `Seller language: ${effectiveLanguage}` : null,
+    listing.url ? `Listing URL: ${listing.url}` : null,
+    listing.seller.value?.name ? `Seller name: ${listing.seller.value.name}` : null,
+    `Platform: ${listing.platform}`,
+  ].filter(Boolean).join('\n')
+
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
+    tools: [QUESTIONNAIRE_TOOL],
+    tool_choice: { type: 'tool', name: 'save_questionnaire' },
+    system: `You are helping a watch buyer write a short, professional message to a seller.
+
+If a "Seller language" is provided, write sellerText in that language. Otherwise detect from the URL domain (.de → German, .fr → French, .it → Italian, .es → Spanish, .nl → Dutch, .jp → Japanese, etc.) or seller name. Default to English if uncertain.
+Write englishText as a clean English version (identical to sellerText if the language is English).
+
+If questions are provided, ask only those — nothing more. Be concise and polite.
+If no questions are provided, write a brief, friendly message expressing interest in the watch and asking the seller what their best price would be.`,
+    messages: [
+      {
+        role: 'user',
+        content: `Watch: ${watchName}
+Seller type: ${listing.seller.value?.type ?? 'unknown'}
+${langCues}
+Known facts: ${knownFacts.join(', ') || 'none'}
+
+${askAbout.length > 0
+  ? `Questions to ask:\n${askAbout.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
+  : 'No questions needed — write a short introductory message asking for their best price.'}`,
+      },
+    ],
+  })
+
+  const toolUse = message.content.find(b => b.type === 'tool_use')
+  if (!toolUse || toolUse.type !== 'tool_use') throw new Error('Claude did not call the questionnaire tool')
+  return toolUse.input as GeneratedQuestionnaire
+}
+
+export async function translateMessage(english: string, targetLanguage: string): Promise<string> {
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
+    messages: [{
+      role: 'user',
+      content: `Translate the following message into ${targetLanguage}. Keep the same tone, structure, and formatting. Return only the translated text, nothing else.\n\n${english}`,
+    }],
+  })
+  const block = message.content.find((b): b is Anthropic.TextBlock => b.type === 'text')
+  if (!block) throw new Error('No translation returned')
+  return block.text.trim()
+}
+
+export async function parseSellerResponse(
+  sellerResponse: string,
+  listing: ListingCard,
+): Promise<ParsedSellerResponse> {
+  const message = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
+    system: `You are extracting structured data from a watch seller's reply to a buyer questionnaire.
+Extract: polishing history, service history (year + type), parts replaced, bracelet sizing, and shipping cost.
+Confidence: "confirmed" if stated clearly, "claimed" if asserted but unverifiable, "unknown" if not mentioned.
+Use null for values not mentioned. Always call save_questionnaire_answers.`,
+    tools: [PARSE_RESPONSE_TOOL],
+    tool_choice: { type: 'tool', name: 'save_questionnaire_answers' },
+    messages: [
+      {
+        role: 'user',
+        content: `Watch listing: ${listing.referenceNumber.value ?? 'unknown ref'} on ${listing.platform}
+
+Seller response:
+${sellerResponse}
+
+Extract all relevant information.`,
+      },
+    ],
+  })
+
+  const toolUse = message.content.find(b => b.type === 'tool_use')
+  if (!toolUse || toolUse.type !== 'tool_use') throw new Error('Claude did not call the parse tool')
+  return toolUse.input as ParsedSellerResponse
 }
 
 /**

@@ -49,6 +49,9 @@ export interface ListingCard {
   photos: string[]
   thumbnailPhotoIndex?: number
   seller: CardField<SellerInfo>
+  manufactureYear: CardField<number>
+  listingLanguage?: string | null
+  braceletType?: string | null
 
   // To be discovered
   polishingStatus: CardField<PolishingStatus>

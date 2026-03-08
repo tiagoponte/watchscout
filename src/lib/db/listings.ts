@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { ListingCard, RankedListing, FactorScores, Platform } from '@/types'
-import type { ExtractedListing } from '@/lib/claude'
+import type { ExtractedListing, ParsedSellerResponse } from '@/lib/claude'
 import { scoreListings } from '@/lib/scoring'
 import type { Listing as PrismaListing } from '@/generated/prisma/client'
 
@@ -27,6 +27,11 @@ function mapListing(row: PrismaListing): ListingCard {
     photos: row.photos,
     thumbnailPhotoIndex: row.thumbnailPhotoIndex ?? undefined,
     seller: j<ListingCard['seller']>(row.seller),
+    manufactureYear: row.manufactureYear
+      ? j<ListingCard['manufactureYear']>(row.manufactureYear)
+      : { value: null, confidence: 'unknown' as const },
+    listingLanguage: row.listingLanguage ?? null,
+    braceletType: row.braceletType ?? null,
     polishingStatus: j<ListingCard['polishingStatus']>(row.polishingStatus),
     lastServiceYear: j<ListingCard['lastServiceYear']>(row.lastServiceYear),
     lastServiceType: j<ListingCard['lastServiceType']>(row.lastServiceType),
@@ -103,6 +108,9 @@ export async function createListing(
       platformProtection: extracted.platformProtection as object,
       photos: extracted.photos,
       seller: extracted.seller as object,
+      manufactureYear: extracted.manufactureYear as object,
+      listingLanguage: extracted.listingLanguage ?? null,
+      braceletType: extracted.braceletType ?? null,
       // To be discovered — all pending
       polishingStatus: pending as object,
       lastServiceYear: pending as object,
@@ -115,6 +123,71 @@ export async function createListing(
     },
   })
   return mapListing(row)
+}
+
+export async function markContacted(listingId: string, searchId: string): Promise<void> {
+  await prisma.listing.updateMany({
+    where: { id: listingId, searchId, contactedAt: null },
+    data: { contactedAt: new Date() },
+  })
+}
+
+export async function updateListingFromQuestionnaire(
+  listingId: string,
+  searchId: string,
+  parsed: ParsedSellerResponse,
+): Promise<ListingCard> {
+  const current = await prisma.listing.findFirst({ where: { id: listingId, searchId } })
+  if (!current) throw new Error('Listing not found')
+
+  const askingPrice = j<ListingCard['askingPrice']>(current.askingPrice)
+  const newShipping = parsed.actualShippingToUser.value
+
+  const row = await prisma.listing.update({
+    where: { id: listingId },
+    data: {
+      polishingStatus: parsed.polishingStatus as object,
+      lastServiceYear: parsed.lastServiceYear as object,
+      lastServiceType: parsed.lastServiceType as object,
+      partsReplaced: parsed.partsReplaced as object,
+      braceletSizingInfo: parsed.braceletSizingInfo as object,
+      actualShippingToUser: parsed.actualShippingToUser as object,
+      ...(newShipping != null && {
+        allInPrice: (askingPrice.value ?? 0) + newShipping || null,
+      }),
+    },
+  })
+  return mapListing(row)
+}
+
+export async function updateFactorScores(
+  listingId: string,
+  searchId: string,
+  factorScores: FactorScores,
+  compositeScore: number,
+): Promise<void> {
+  await prisma.listing.update({
+    where: { id: listingId, searchId },
+    data: { factorScores: factorScores as object, compositeScore },
+  })
+}
+
+export async function rerankByCompositeScore(searchId: string): Promise<void> {
+  const rows = await prisma.listing.findMany({
+    where: { searchId, compositeScore: { not: null } },
+    orderBy: { compositeScore: 'desc' },
+    select: { id: true, rank: true },
+  })
+  if (rows.length === 0) return
+
+  await Promise.all(
+    rows.map((row, i) =>
+      prisma.listing.update({
+        where: { id: row.id },
+        data: { rank: i + 1, rankDelta: null },
+      }),
+    ),
+  )
 }
 
 export async function rerankListings(searchId: string): Promise<void> {

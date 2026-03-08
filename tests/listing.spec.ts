@@ -103,11 +103,40 @@ test.describe('Listing intelligence card — lst_speed_01 (UhrenWelt München)',
   // ── Seller details ────────────────────────────────────────────────────────────
 
   test('should show seller rating', async ({ page }) => {
+    await page.getByRole('button', { name: 'Seller Details', exact: true }).click()
     await expect(page.getByText(/4\.8/)).toBeVisible()
   })
 
   test('should show review count', async ({ page }) => {
+    await page.getByRole('button', { name: 'Seller Details', exact: true }).click()
     await expect(page.getByText(/847/)).toBeVisible()
+  })
+
+  // ── Adjust Scoring ───────────────────────────────────────────────────────────
+
+  test('should show the Adjust Scoring button', async ({ page }) => {
+    await expect(page.getByRole('link', { name: /adjust scoring/i })).toBeVisible()
+  })
+
+  test('should expand Scoring Breakdown when Adjust Scoring is clicked', async ({ page }) => {
+    // Section starts collapsed — content not in DOM
+    await expect(page.getByRole('link', { name: /adjust scoring/i })).toBeVisible()
+    await page.getByRole('link', { name: /adjust scoring/i }).click()
+    // After hash navigation CardSection opens — Edit button inside ScoringPanel becomes visible
+    await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  })
+
+  test('should show Edit button inside Scoring Breakdown when section is open', async ({ page }) => {
+    await page.getByRole('button', { name: 'Scoring Breakdown', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible()
+  })
+
+  test('should enter edit mode with sliders and Save/Cancel when Edit is clicked', async ({ page }) => {
+    await page.getByRole('button', { name: 'Scoring Breakdown', exact: true }).click()
+    await page.getByRole('button', { name: 'Edit', exact: true }).click()
+    await expect(page.getByRole('slider').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeVisible()
   })
 
   // ── Navigation ───────────────────────────────────────────────────────────────

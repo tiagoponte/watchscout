@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import sharp from 'sharp'
 import { getApiUserContext } from '@/lib/server/get-user-id'
 import { extractFromHtml, extractFromImage, findRepresentativeImage } from '@/lib/claude'
 import { createListing, rerankListings } from '@/lib/db/listings'
@@ -56,6 +57,19 @@ export async function POST(request: Request) {
         )
       }
       const html = await res.text()
+      // Cloudflare and similar WAFs return a 200 challenge page instead of the real listing
+      if (
+        html.includes('cf-browser-verification') ||
+        html.includes('challenge-form') ||
+        html.includes('__cf_chl') ||
+        html.includes('Checking your browser') ||
+        html.length < 500
+      ) {
+        return NextResponse.json(
+          { error: 'This site is protected and cannot be fetched directly. Please upload a screenshot of the listing instead.' },
+          { status: 422 },
+        )
+      }
       extracted = await extractFromHtml(html, url)
     } else {
       extracted = await extractFromImage(imageBase64!, mimeType ?? 'image/jpeg')
@@ -63,18 +77,39 @@ export async function POST(request: Request) {
 
     await incrementAiCalls(user.id)
 
-    // For screenshots: use the uploaded image itself as the photo
-    if (extracted.photos.length === 0 && imageBase64) {
-      extracted.photos = [`data:${mimeType ?? 'image/jpeg'};base64,${imageBase64}`]
+    // Screenshots: Claude can see images but cannot know real URLs — discard any hallucinated ones.
+    // Instead, crop the screenshot to the watch bounding box Claude identified.
+    if (imageBase64) {
+      extracted.photos = []
+      if (extracted.watchRegion) {
+        try {
+          const { xPercent, yPercent, widthPercent, heightPercent } = extracted.watchRegion
+          const buf = Buffer.from(imageBase64, 'base64')
+          const meta = await sharp(buf).metadata()
+          const w = meta.width!, h = meta.height!
+          const left   = Math.max(0, Math.round((xPercent / 100) * w))
+          const top    = Math.max(0, Math.round((yPercent / 100) * h))
+          const width  = Math.min(Math.round((widthPercent / 100) * w),  w - left)
+          const height = Math.min(Math.round((heightPercent / 100) * h), h - top)
+          const cropped = await sharp(buf)
+            .extract({ left, top, width, height })
+            .jpeg({ quality: 85 })
+            .toBuffer()
+          extracted.photos = [`data:image/jpeg;base64,${cropped.toString('base64')}`]
+        } catch {
+          // crop failed — fall through to Bing
+        }
+      }
     }
 
-    // For URLs with no photos extracted: search for a representative image
+    // If still no photos: try Bing as a fallback (covers both URL and screenshot crop failures)
     if (extracted.photos.length === 0) {
       const query = [search.criteria.modelName, extracted.referenceNumber.value]
         .filter(Boolean)
         .join(' ')
       const repImage = await findRepresentativeImage(query)
       if (repImage) extracted.photos = [repImage]
+      // If Bing also fails, leave photos empty — ImageOff is better than a raw screenshot
     }
 
     // Proxy external photo URLs through our server to bypass CDN hotlink protection
@@ -87,7 +122,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ listingId: listing.id }, { status: 201 })
   } catch (e) {
-    console.error('POST /api/listings', e)
-    return NextResponse.json({ error: 'Failed to extract listing. Please try again.' }, { status: 500 })
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('POST /api/listings', msg)
+    return NextResponse.json({ error: `Extraction failed: ${msg}` }, { status: 500 })
   }
 }

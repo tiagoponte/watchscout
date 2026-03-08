@@ -21,9 +21,9 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
     setErrors(prev => { const next = [...prev]; next[i] = true; return next })
   }
 
-  const visiblePhotos = photos.filter((_, i) => !errors[i])
+  const allErrored = photos.length > 0 && photos.every((_, i) => errors[i])
 
-  if (photos.length === 0 || visiblePhotos.length === 0) {
+  if (photos.length === 0 || allErrored) {
     return (
       <div className="flex flex-col items-center justify-center h-32 gap-2 rounded-lg bg-zinc-900 border border-dashed border-zinc-800 text-zinc-600 text-sm">
         <ImageOff className="h-5 w-5" />
@@ -36,23 +36,29 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
     <>
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex gap-3 pb-3">
-          {photos.map((src, i) => errors[i] ? null : (
+          {photos.map((src, i) => (
             <div key={i} className="relative shrink-0 w-48 h-36 group/photo">
               <button
-                onClick={() => setLightboxIndex(i)}
+                onClick={() => !errors[i] && setLightboxIndex(i)}
                 className={`block w-full h-full rounded-lg overflow-hidden border bg-zinc-900 hover:border-zinc-600 transition-colors cursor-zoom-in ${
                   i === thumbIdx ? 'border-amber-400/60' : 'border-zinc-800'
                 }`}
               >
-                <Image
-                  src={src}
-                  alt={`${alt} ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="192px"
-                  unoptimized
-                  onError={() => markError(i)}
-                />
+                {errors[i] ? (
+                  <div className="w-full h-full flex items-center justify-center text-zinc-700">
+                    <ImageOff className="h-6 w-6" />
+                  </div>
+                ) : (
+                  <Image
+                    src={src}
+                    alt={`${alt} ${i + 1}`}
+                    fill
+                    className="object-cover pointer-events-none"
+                    sizes="192px"
+                    unoptimized
+                    onError={() => markError(i)}
+                  />
+                )}
               </button>
               {/* Thumbnail star — sibling to photo button, not nested inside it */}
               <button
@@ -83,7 +89,7 @@ export function PhotoGallery({ photos, alt = 'Watch photo', thumbnailIndex = 0 }
                 src={photos[lightboxIndex]}
                 alt={`${alt} ${lightboxIndex + 1}`}
                 fill
-                className="object-contain"
+                className="object-contain pointer-events-none"
                 sizes="(max-width: 768px) 100vw, 768px"
                 unoptimized
                 onError={() => { markError(lightboxIndex); setLightboxIndex(null) }}
