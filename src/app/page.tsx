@@ -290,6 +290,10 @@ export default async function HomePage() {
             <span className="text-amber-400 font-semibold text-sm tracking-tight">WatchScout</span>
           </div>
           <p className="text-xs text-zinc-600">© 2026 WatchScout. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Terms</Link>
+          </div>
         </div>
       </footer>
 
