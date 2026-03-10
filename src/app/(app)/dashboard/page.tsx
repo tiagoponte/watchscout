@@ -60,11 +60,15 @@ export default async function DashboardPage({
           {searchesWithRankings.map(({ search, rankings }) => {
             const topRankedListing = rankings[0] ?? null
             const contactedCount = rankings.filter((r) => r.listing.contactedAt).length
+            const decidedListing = search.decidedListingId
+              ? rankings.find((r) => r.listing.id === search.decidedListingId) ?? null
+              : null
             return (
               <SearchCard
                 key={search.id}
                 search={search}
                 topRankedListing={topRankedListing}
+                decidedListing={decidedListing}
                 contactedCount={contactedCount}
               />
             )

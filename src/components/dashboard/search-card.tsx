@@ -16,6 +16,7 @@ import { archiveSearchAction, deleteSearchAction, unarchiveSearchAction } from '
 interface SearchCardProps {
   search: Search
   topRankedListing?: RankedListing | null
+  decidedListing?: RankedListing | null
   contactedCount?: number
 }
 
@@ -26,7 +27,7 @@ const statusConfig = {
   archived: { label: 'Archived', className: 'bg-zinc-900 text-zinc-500 border-zinc-700' },
 }
 
-export function SearchCard({ search, topRankedListing, contactedCount = 0 }: SearchCardProps) {
+export function SearchCard({ search, topRankedListing, decidedListing, contactedCount = 0 }: SearchCardProps) {
   const router = useRouter()
   const href = `/searches/${search.id}`
   const status = statusConfig[search.status] ?? statusConfig.active
@@ -88,14 +89,14 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
             </div>
 
             <div className="shrink-0 relative w-8 h-8 mt-0.5" onClick={(e) => e.stopPropagation()}>
-              <ChevronRight className="absolute inset-0 m-auto h-4 w-4 text-zinc-500 group-hover:opacity-0 transition-opacity" />
+              <ChevronRight className="absolute inset-0 m-auto h-4 w-4 text-zinc-500 opacity-0 sm:opacity-100 sm:group-hover:opacity-0 transition-opacity" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label="Search actions"
-                    className="absolute inset-0 h-8 w-8 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute inset-0 h-8 w-8 text-zinc-500 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -147,7 +148,24 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
             </span>
           </div>
 
-          {topRankedListing && topListing && (
+          {search.status === 'decided' && decidedListing ? (
+            <div className="flex items-center justify-between text-sm pt-0.5">
+              <span className="text-amber-400 font-medium">Purchased</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-zinc-300 text-xs truncate max-w-[120px]">
+                  {decidedListing.listing.seller.value?.name ?? 'Unknown seller'}
+                </span>
+                <span className="text-zinc-700">·</span>
+                <span className="text-zinc-300 text-xs tabular-nums font-medium">
+                  {decidedListing.listing.allInPrice != null
+                    ? formatCurrency(decidedListing.listing.allInPrice, decidedListing.listing.currency.value ?? 'EUR')
+                    : decidedListing.listing.askingPrice.value != null
+                      ? formatCurrency(decidedListing.listing.askingPrice.value, decidedListing.listing.currency.value ?? 'EUR')
+                      : '—'}
+                </span>
+              </div>
+            </div>
+          ) : topRankedListing && topListing ? (
             <>
               <div className="flex items-center justify-between text-sm pt-0.5">
                 <span className="text-zinc-500">Top pick</span>
@@ -192,7 +210,7 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
                 </div>
               )}
             </>
-          )}
+          ) : null}
 
           <div className="flex items-center justify-between text-sm">
             <span className="text-zinc-500">Updated</span>
