@@ -46,6 +46,20 @@ export async function getSearch(searchId: string, userId: string): Promise<Searc
   return row ? mapSearch(row) : null
 }
 
+export async function markAsPurchased(searchId: string, listingId: string, userId: string): Promise<void> {
+  await prisma.search.updateMany({
+    where: { id: searchId, userId },
+    data: { status: 'decided', decidedListingId: listingId },
+  })
+}
+
+export async function unmarkAsPurchased(searchId: string, userId: string): Promise<void> {
+  await prisma.search.updateMany({
+    where: { id: searchId, userId },
+    data: { status: 'active', decidedListingId: null },
+  })
+}
+
 export async function createSearch(data: {
   userId: string
   name: string

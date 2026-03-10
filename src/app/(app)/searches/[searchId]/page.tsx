@@ -94,7 +94,7 @@ export default async function SearchPage({ params }: Props) {
       ) : (
         <div className="rounded-lg border border-zinc-800 overflow-hidden">
           {rankings.map((r) => (
-            <ListingRow key={r.listing.id} rankedListing={r} searchId={searchId} />
+            <ListingRow key={r.listing.id} rankedListing={r} searchId={searchId} decidedListingId={search.decidedListingId} />
           ))}
         </div>
       )}

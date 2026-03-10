@@ -4,21 +4,22 @@ import Image from 'next/image'
 import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ImageOff, MoreHorizontal, Trash2 } from 'lucide-react'
+import { ChevronRight, ImageOff, MoreHorizontal, ShoppingBag, Trash2, Undo2 } from 'lucide-react'
 import { RankedListing } from '@/types'
 import { RankBadge } from './rank-badge'
 import { ScoreBar } from './score-bar'
 import { ConfidenceIndicator } from '@/components/listing/confidence-indicator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, getPlatformLabel, getScoreColor } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
-import { deleteListingAction } from '@/app/(app)/searches/[searchId]/actions'
+import { deleteListingAction, markAsPurchasedAction, unmarkAsPurchasedAction } from '@/app/(app)/searches/[searchId]/actions'
 
 interface ListingRowProps {
   rankedListing: RankedListing
   searchId: string
+  decidedListingId?: string
 }
 
 const conditionLabels: Record<string, string> = {
@@ -29,13 +30,14 @@ const conditionLabels: Record<string, string> = {
   poor: 'Poor',
 }
 
-export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
+export function ListingRow({ rankedListing, searchId, decidedListingId }: ListingRowProps) {
   const { listing, rank, compositeScore, rankDelta } = rankedListing
   const price = listing.askingPrice.value
   const currency = listing.currency.value ?? 'EUR'
   const router = useRouter()
   const [imgError, setImgError] = React.useState(false)
   const href = `/searches/${searchId}/listings/${listing.id}`
+  const isPurchased = decidedListingId === listing.id
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation()
@@ -44,11 +46,23 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
     router.refresh()
   }
 
+  async function handleMarkPurchased(e: React.MouseEvent) {
+    e.stopPropagation()
+    await markAsPurchasedAction(listing.id, searchId)
+    router.refresh()
+  }
+
+  async function handleUnmark(e: React.MouseEvent) {
+    e.stopPropagation()
+    await unmarkAsPurchasedAction(searchId)
+    router.refresh()
+  }
+
   return (
     <Link
       href={href}
       data-testid="listing-row"
-      className="group flex items-center gap-4 px-4 py-3.5 border-b border-zinc-800 hover:bg-zinc-900 transition-colors"
+      className={`group flex items-center gap-4 px-4 py-3.5 border-b border-zinc-800 hover:bg-zinc-900 transition-colors ${isPurchased ? 'bg-amber-950/20 border-l-2 border-l-amber-400' : ''}`}
     >
       {/* Rank + thumbnail — compound identity unit */}
       <div className="flex items-center gap-2 shrink-0">
@@ -78,6 +92,11 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
           <Badge variant="outline" className="text-xs bg-zinc-900 border-zinc-700 text-zinc-400 shrink-0">
             {getPlatformLabel(listing.platform)}
           </Badge>
+          {isPurchased && (
+            <Badge variant="outline" className="text-xs bg-amber-950/40 border-amber-700/50 text-amber-400 shrink-0">
+              Purchased
+            </Badge>
+          )}
           <span className="text-xs text-zinc-500 truncate hidden sm:inline">
             {listing.referenceNumber.value ? `Ref. ${listing.referenceNumber.value}` : ''}
           </span>
@@ -170,7 +189,19 @@ export function ListingRow({ rankedListing, searchId }: ListingRowProps) {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" className="w-48">
+              {isPurchased ? (
+                <DropdownMenuItem className="cursor-pointer" onClick={handleUnmark}>
+                  <Undo2 className="h-4 w-4 mr-2" />
+                  Unmark as purchased
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem className="cursor-pointer" onClick={handleMarkPurchased}>
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Mark as purchased
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-400 focus:text-red-400 focus:bg-red-950/40 cursor-pointer"
                 onClick={handleDelete}
