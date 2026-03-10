@@ -27,10 +27,26 @@ export async function getSearches(userId: string): Promise<Search[]> {
   return rows.map(mapSearch)
 }
 
+export async function getArchivedSearches(userId: string): Promise<Search[]> {
+  const rows = await prisma.search.findMany({
+    where: { userId, status: 'archived' },
+    include: { listings: { select: { id: true } } },
+    orderBy: { updatedAt: 'desc' },
+  })
+  return rows.map(mapSearch)
+}
+
 export async function archiveSearch(searchId: string, userId: string): Promise<void> {
   await prisma.search.updateMany({
     where: { id: searchId, userId },
     data: { status: 'archived' },
+  })
+}
+
+export async function unarchiveSearch(searchId: string, userId: string): Promise<void> {
+  await prisma.search.updateMany({
+    where: { id: searchId, userId },
+    data: { status: 'active' },
   })
 }
 

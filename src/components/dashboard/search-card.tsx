@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search as SearchIcon, ChevronRight, Shield, MoreHorizontal, Archive, Trash2 } from 'lucide-react'
+import { Search as SearchIcon, ChevronRight, Shield, MoreHorizontal, Archive, ArchiveRestore, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { WatchIcon } from '@/components/ui/watch-icon'
 import { Search, RankedListing } from '@/types'
 import { formatCurrency, formatRelativeDate, getScoreColor, getScoreLabel, getRiskColor, getRiskLabel } from '@/lib/format'
-import { archiveSearchAction, deleteSearchAction } from '@/app/(app)/dashboard/actions'
+import { archiveSearchAction, deleteSearchAction, unarchiveSearchAction } from '@/app/(app)/dashboard/actions'
 
 interface SearchCardProps {
   search: Search
@@ -41,6 +41,12 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
   async function handleArchive(e: React.MouseEvent) {
     e.stopPropagation()
     await archiveSearchAction(search.id)
+    router.refresh()
+  }
+
+  async function handleUnarchive(e: React.MouseEvent) {
+    e.stopPropagation()
+    await unarchiveSearchAction(search.id)
     router.refresh()
   }
 
@@ -95,13 +101,17 @@ export function SearchCard({ search, topRankedListing, contactedCount = 0 }: Sea
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={handleArchive}
-                  >
-                    <Archive className="h-4 w-4 mr-2" />
-                    Archive
-                  </DropdownMenuItem>
+                  {search.status === 'archived' ? (
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleUnarchive}>
+                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                      Unarchive
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem className="cursor-pointer" onClick={handleArchive}>
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-red-400 focus:text-red-400 focus:bg-red-950/40 cursor-pointer"

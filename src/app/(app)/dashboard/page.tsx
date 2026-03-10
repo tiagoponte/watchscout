@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button'
 import { SearchCard } from '@/components/dashboard/search-card'
 import { EmptyState } from '@/components/dashboard/empty-state'
 import { UpgradeBanner } from '@/components/dashboard/upgrade-banner'
+import { ArchivedSection } from '@/components/dashboard/archived-section'
 export const dynamic = 'force-dynamic'
 
-import { getSearches } from '@/lib/db/searches'
+import { getSearches, getArchivedSearches } from '@/lib/db/searches'
 import { getRankedListings } from '@/lib/db/listings'
 import { getUserContext } from '@/lib/server/get-user-id'
 
@@ -17,11 +18,20 @@ export default async function DashboardPage({
 }) {
   const { id: userId } = await getUserContext()
   const { upgraded } = await searchParams
-  const searches = await getSearches(userId)
+  const [searches, archivedSearches] = await Promise.all([
+    getSearches(userId),
+    getArchivedSearches(userId),
+  ])
   const searchesWithRankings = await Promise.all(
     searches.map(async (search) => {
       const rankings = await getRankedListings(search.id)
       return { search, rankings }
+    })
+  )
+  const archivedWithRankings = await Promise.all(
+    archivedSearches.map(async (search) => {
+      const rankings = await getRankedListings(search.id)
+      return { search, topRankedListing: rankings[0] ?? null }
     })
   )
 
@@ -61,6 +71,8 @@ export default async function DashboardPage({
           })}
         </div>
       )}
+
+      <ArchivedSection searches={archivedWithRankings} />
     </div>
   )
 }
