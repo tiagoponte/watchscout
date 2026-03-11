@@ -40,6 +40,8 @@ const WATCH_CATEGORIES = [
   { value: 'diver', label: 'Diver' },
   { value: 'dress', label: 'Dress' },
   { value: 'field', label: 'Field' },
+  { value: 'pilot', label: 'Pilot' },
+  { value: 'sports', label: 'Sports' },
 ]
 
 const MUST_HAVE_SUGGESTIONS = [

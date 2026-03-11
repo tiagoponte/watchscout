@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SearchCard } from '@/components/dashboard/search-card'
 import { EmptyState } from '@/components/dashboard/empty-state'
+import { DemoSearchCard } from '@/components/dashboard/demo-search-card'
 import { UpgradeBanner } from '@/components/dashboard/upgrade-banner'
 import { ArchivedSection } from '@/components/dashboard/archived-section'
 export const dynamic = 'force-dynamic'
@@ -54,7 +55,9 @@ export default async function DashboardPage({
       </div>
 
       {searchesWithRankings.length === 0 ? (
-        <EmptyState />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <DemoSearchCard />
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {searchesWithRankings.map(({ search, rankings }) => {

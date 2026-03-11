@@ -20,6 +20,7 @@ interface ListingRowProps {
   rankedListing: RankedListing
   searchId: string
   decidedListingId?: string
+  isDemo?: boolean
 }
 
 const conditionLabels: Record<string, string> = {
@@ -30,7 +31,7 @@ const conditionLabels: Record<string, string> = {
   poor: 'Poor',
 }
 
-export function ListingRow({ rankedListing, searchId, decidedListingId }: ListingRowProps) {
+export function ListingRow({ rankedListing, searchId, decidedListingId, isDemo }: ListingRowProps) {
   const { listing, rank, compositeScore, rankDelta } = rankedListing
   const price = listing.askingPrice.value
   const currency = listing.currency.value ?? 'EUR'
@@ -177,41 +178,43 @@ export function ListingRow({ rankedListing, searchId, decidedListingId }: Listin
 
       {/* Actions + arrow */}
       <div className="flex items-center shrink-0 -mr-2">
-        <div onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Listing actions"
-                className="h-8 w-8 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {isPurchased ? (
-                <DropdownMenuItem className="cursor-pointer" onClick={handleUnmark}>
-                  <Undo2 className="h-4 w-4 mr-2" />
-                  Unmark as purchased
+        {!isDemo && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Listing actions"
+                  className="h-8 w-8 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {isPurchased ? (
+                  <DropdownMenuItem className="cursor-pointer" onClick={handleUnmark}>
+                    <Undo2 className="h-4 w-4 mr-2" />
+                    Unmark as purchased
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem className="cursor-pointer" onClick={handleMarkPurchased}>
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    Mark as purchased
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-400 focus:text-red-400 focus:bg-red-950/40 cursor-pointer"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remove listing
                 </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem className="cursor-pointer" onClick={handleMarkPurchased}>
-                  <ShoppingBag className="h-4 w-4 mr-2" />
-                  Mark as purchased
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-red-400 focus:text-red-400 focus:bg-red-950/40 cursor-pointer"
-                onClick={handleDelete}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Remove listing
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
         <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-zinc-400 transition-colors p-0 mr-0" />
       </div>
     </Link>

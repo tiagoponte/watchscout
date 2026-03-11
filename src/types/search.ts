@@ -1,7 +1,7 @@
 export type ConditionLevel = 'mint' | 'very_good' | 'good' | 'fair'
 export type SellerTypePreference = 'dealer' | 'private' | 'no_preference'
 export type SearchStatus = 'active' | 'paused' | 'decided' | 'archived'
-export type WatchCategory = 'chronograph' | 'diver' | 'dress' | 'field'
+export type WatchCategory = 'chronograph' | 'diver' | 'dress' | 'field' | 'pilot' | 'sports'
 
 export interface SearchCriteria {
   modelName: string

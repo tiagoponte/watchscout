@@ -8,6 +8,8 @@ import { PhotoGallery } from './photo-gallery'
 import { QuestionnairePanel } from './questionnaire-panel'
 import { ScoringPanel } from './scoring-panel'
 import { OfferSuggestionPanel } from './offer-suggestion'
+import { DemoQuestionnaireView } from './demo-questionnaire-view'
+import type { DemoQuestionnaire } from '@/data/demo-hunt'
 import { RankBadge } from '@/components/searches/rank-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,6 +20,8 @@ interface IntelligenceCardProps {
   rankedListing: RankedListing
   searchId: string
   watchName: string
+  isDemo?: boolean
+  demoQuestionnaire?: DemoQuestionnaire | null
 }
 
 const conditionLabels: Record<string, { label: string; color: string }> = {
@@ -41,7 +45,7 @@ const serviceLabels: Record<string, string> = {
 }
 
 
-export function IntelligenceCard({ rankedListing, searchId, watchName }: IntelligenceCardProps) {
+export function IntelligenceCard({ rankedListing, searchId, watchName, isDemo, demoQuestionnaire }: IntelligenceCardProps) {
   const { listing, rank, compositeScore, factorScores, rankDelta } = rankedListing
   const currency = listing.currency.value ?? 'EUR'
   const price = listing.askingPrice.value
@@ -116,12 +120,14 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            asChild
-            className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold"
-          >
-            <a href="#questionnaire">Contact Seller</a>
-          </Button>
+          {!isDemo && (
+            <Button
+              asChild
+              className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold"
+            >
+              <a href="#questionnaire">Contact Seller</a>
+            </Button>
+          )}
           <Button
             asChild
             variant="outline"
@@ -190,12 +196,22 @@ export function IntelligenceCard({ rankedListing, searchId, watchName }: Intelli
             {listing.notes}
           </p>
         )}
-        <OfferSuggestionPanel listingId={listing.id} searchId={searchId} currency={currency} />
+        {!isDemo && <OfferSuggestionPanel listingId={listing.id} searchId={searchId} currency={currency} />}
       </CardSection>
 
       {/* Section 2: Questionnaire */}
       <CardSection id="questionnaire" title="Questionnaire" defaultOpen={false}>
-        <QuestionnairePanel listing={listing} searchId={searchId} />
+        {isDemo ? (
+          demoQuestionnaire ? (
+            <DemoQuestionnaireView questionnaire={demoQuestionnaire} />
+          ) : (
+            <p className="text-sm text-zinc-500 py-4 text-center">
+              No questionnaire for this listing — generate one in your own hunt.
+            </p>
+          )
+        ) : (
+          <QuestionnairePanel listing={listing} searchId={searchId} />
+        )}
       </CardSection>
 
       {/* Section 3: Scoring Breakdown */}

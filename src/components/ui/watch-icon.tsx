@@ -143,6 +143,58 @@ function FieldDial() {
   )
 }
 
+function PilotDial() {
+  return (
+    <>
+      {/* Case */}
+      <circle cx="50" cy="50" r="43" strokeWidth="3" />
+      {/* Large triangle at 12 — aviation marker */}
+      <polygon points="50,12 44.5,23 55.5,23" fill="currentColor" stroke="none" />
+      {/* Bold rectangular markers at 3, 6, 9 */}
+      {[3, 6, 9].map(i => {
+        const t = tick(i, 32, 41)
+        return <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} strokeWidth="6" strokeLinecap="square" />
+      })}
+      {/* Dot markers at remaining hours */}
+      {[1, 2, 4, 5, 7, 8, 10, 11].map(i => {
+        const a = (i * 30 - 90) * (Math.PI / 180)
+        return <circle key={i} cx={r(50 + 39 * Math.cos(a))} cy={r(50 + 39 * Math.sin(a))} r="2.5" fill="currentColor" stroke="none" />
+      })}
+      {/* Bold baton hour hand — 10 o'clock */}
+      <line x1="50" y1="50" x2="28" y2="37" strokeWidth="6" strokeLinecap="round" />
+      {/* Minute hand — 2 o'clock */}
+      <line x1="50" y1="50" x2="79" y2="33" strokeWidth="4" strokeLinecap="round" />
+      {/* Center pivot */}
+      <circle cx="50" cy="50" r="4" fill="currentColor" stroke="none" />
+    </>
+  )
+}
+
+function SportsDial() {
+  return (
+    <>
+      {/* Outer ring */}
+      <circle cx="50" cy="50" r="47" strokeWidth="1.5" />
+      {/* Case */}
+      <circle cx="50" cy="50" r="43" strokeWidth="2.5" />
+      {/* Rectangular markers — bold at quarters, narrower elsewhere */}
+      {Array.from({ length: 12 }, (_, i) => {
+        const isQ = i % 3 === 0
+        const t = tick(i, isQ ? 33 : 36, 41)
+        return <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} strokeWidth={isQ ? 5 : 3} strokeLinecap="square" />
+      })}
+      {/* Date aperture at 3 o'clock */}
+      <rect x="74" y="45.5" width="10" height="9" rx="1" strokeWidth="1.5" />
+      {/* Hour hand — 10 o'clock */}
+      <line x1="50" y1="50" x2="28" y2="37" strokeWidth="5.5" strokeLinecap="round" />
+      {/* Minute hand — 2 o'clock */}
+      <line x1="50" y1="50" x2="79" y2="33" strokeWidth="3.5" strokeLinecap="round" />
+      {/* Center pivot */}
+      <circle cx="50" cy="50" r="3.5" fill="currentColor" stroke="none" />
+    </>
+  )
+}
+
 export function WatchIcon({ category, className }: WatchIconProps) {
   return (
     <svg
@@ -156,6 +208,8 @@ export function WatchIcon({ category, className }: WatchIconProps) {
       {category === 'diver' && <DiverDial />}
       {category === 'dress' && <DressDial />}
       {category === 'field' && <FieldDial />}
+      {category === 'pilot' && <PilotDial />}
+      {category === 'sports' && <SportsDial />}
     </svg>
   )
 }
