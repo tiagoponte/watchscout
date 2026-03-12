@@ -16,6 +16,6 @@ export default withSentryConfig(nextConfig, {
   org: 'watchscout',
   project: 'watchscout',
   silent: true,
-  disableLogger: true,
+  webpack: { treeshake: { removeDebugLogging: true } },
   telemetry: false,
 });
