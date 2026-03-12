@@ -41,7 +41,7 @@ export function UpgradeDialog({ open, onClose, reason }: UpgradeDialogProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Upgrade to Power</DialogTitle>
+          <DialogTitle>Upgrade to Unlimited</DialogTitle>
           {reason && reason in REASON_COPY && (
             <DialogDescription>{REASON_COPY[reason]}</DialogDescription>
           )}

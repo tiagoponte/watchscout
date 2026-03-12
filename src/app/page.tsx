@@ -273,7 +273,7 @@ export default async function HomePage() {
 
           {/* Power */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 flex flex-col">
-            <p className="text-sm font-semibold text-zinc-300 mb-1">Power</p>
+            <p className="text-sm font-semibold text-zinc-300 mb-1">Unlimited</p>
             <p className="text-3xl font-bold text-zinc-50 mb-1">€49.99</p>
             <p className="text-xs text-zinc-600 mb-6">per month</p>
             <ul className="space-y-2.5 flex-1 mb-6">
@@ -293,7 +293,7 @@ export default async function HomePage() {
               href="/login"
               className="block text-center text-sm font-semibold border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100 transition-colors px-4 py-2.5 rounded-md"
             >
-              Go Power
+              Go Unlimited
             </Link>
           </div>
         </div>

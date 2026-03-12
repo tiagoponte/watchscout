@@ -13,5 +13,5 @@ export type Tier = keyof typeof PLAN_LIMITS
 
 export const PLAN_PRICES = {
   HUNT:  { label: 'Hunt Unlock', price: '€24.99' },      // one-time
-  POWER: { label: 'Power',       price: '€49.99/mo' },   // subscription
+  POWER: { label: 'Unlimited',   price: '€49.99/mo' },   // subscription
 } as const
