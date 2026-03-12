@@ -14,5 +14,5 @@ export function getStripe(): Stripe {
 
 export const STRIPE_PRICE_IDS = {
   HUNT:  process.env.STRIPE_HUNT_PRICE_ID!,   // one-time price
-  POWER: process.env.STRIPE_POWER_PRICE_ID!,  // recurring price
+  UNLIMITED: process.env.STRIPE_UNLIMITED_PRICE_ID!,  // recurring price
 } as const

@@ -32,7 +32,7 @@ export async function canAddListing(searchId: string, userId: string): Promise<b
     prisma.listing.count({ where: { searchId } }),
   ])
   if (!user || !search) return false
-  if (user.tier === 'POWER') return true
+  if (user.tier === 'UNLIMITED') return true
   if (search.unlockedAt !== null) return count < HUNT_UNLOCK_LIMITS.listingsPerSearch
   return count < PLAN_LIMITS.FREE.listingsPerSearch
 }
@@ -41,7 +41,7 @@ export async function canMakeAiCall(userId: string, searchId?: string): Promise<
   const user = await prisma.user.findUnique({ where: { id: userId } })
   if (!user) return false
 
-  if (user.tier === 'POWER') {
+  if (user.tier === 'UNLIMITED') {
     const now = new Date()
     const resetAt = new Date(user.aiCallsResetAt)
     const isNewDay =
@@ -52,7 +52,7 @@ export async function canMakeAiCall(userId: string, searchId?: string): Promise<
       await prisma.user.update({ where: { id: userId }, data: { aiCallsToday: 0, aiCallsResetAt: now } })
       return true
     }
-    return user.aiCallsToday < PLAN_LIMITS.POWER.aiCallsPerDay
+    return user.aiCallsToday < PLAN_LIMITS.UNLIMITED.aiCallsPerDay
   }
 
   // Check search-level unlock first

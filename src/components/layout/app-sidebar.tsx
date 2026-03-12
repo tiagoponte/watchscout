@@ -82,7 +82,7 @@ export function AppSidebar({ searches, userEmail, tier }: AppSidebarProps) {
       </nav>
 
       {/* Plan */}
-      {tier !== 'POWER' && (
+      {tier !== 'UNLIMITED' && (
         <div className="px-3 pb-2">
           <div className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 flex items-center justify-between gap-2">
             <div>

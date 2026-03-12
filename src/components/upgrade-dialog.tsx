@@ -34,8 +34,8 @@ export function UpgradeDialog({ open, onClose, reason }: UpgradeDialogProps) {
     }
   }
 
-  const { label, price } = PLAN_PRICES.POWER
-  const limits = PLAN_LIMITS.POWER
+  const { label, price } = PLAN_PRICES.UNLIMITED
+  const limits = PLAN_LIMITS.UNLIMITED
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

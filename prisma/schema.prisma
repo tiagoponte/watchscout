@@ -9,7 +9,7 @@ datasource db {
 
 enum Tier {
   FREE
-  POWER   // was PRO
+  UNLIMITED
 }
 
 model User {

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     if (body.purchaseType === 'power') {
       const session = await getStripe().checkout.sessions.create({
         mode: 'subscription',
-        line_items: [{ price: STRIPE_PRICE_IDS.POWER, quantity: 1 }],
+        line_items: [{ price: STRIPE_PRICE_IDS.UNLIMITED, quantity: 1 }],
         customer_email: user.email,
         client_reference_id: user.id,
         metadata: { userId: user.id, purchaseType: 'power' },

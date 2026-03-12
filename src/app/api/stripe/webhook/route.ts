@@ -47,7 +47,7 @@ export async function POST(request: Request) {
             await prisma.user.update({
               where: { id: userId },
               data: {
-                tier: 'POWER',
+                tier: 'UNLIMITED',
                 ...(customerId ? { stripeCustomerId: customerId } : {}),
               },
             })
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       }
 
       case 'customer.subscription.updated': {
-        // Handle plan changes via Stripe portal (only POWER subscription now)
+        // Handle plan changes via Stripe portal (only UNLIMITED subscription now)
         const subscription = event.data.object as Stripe.Subscription
         const customerId = typeof subscription.customer === 'string'
           ? subscription.customer
@@ -78,10 +78,10 @@ export async function POST(request: Request) {
 
         const priceId = subscription.items.data[0]?.price.id
         const { STRIPE_PRICE_IDS } = await import('@/lib/stripe')
-        if (priceId === STRIPE_PRICE_IDS.POWER) {
+        if (priceId === STRIPE_PRICE_IDS.UNLIMITED) {
           await prisma.user.updateMany({
             where: { stripeCustomerId: customerId },
-            data: { tier: 'POWER' },
+            data: { tier: 'UNLIMITED' },
           })
         }
         break

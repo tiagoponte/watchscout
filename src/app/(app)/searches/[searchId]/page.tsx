@@ -37,7 +37,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
   const { criteria } = search
 
   const showUnlockBanner =
-    user.tier !== 'POWER' &&
+    user.tier !== 'UNLIMITED' &&
     !search.unlockedAt &&
     rankings.length >= PLAN_LIMITS.FREE.listingsPerSearch
 
