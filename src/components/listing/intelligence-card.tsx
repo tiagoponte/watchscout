@@ -180,9 +180,9 @@ export function IntelligenceCard({ rankedListing, searchId, watchName, isDemo, d
             </Badge>
           )}
           {listing.returnsPolicy.value && (
-            <Badge variant="outline" className="gap-1 bg-zinc-900 text-zinc-400 border-zinc-700 text-xs">
-              <RotateCcw className="h-3 w-3" />
-              {listing.returnsPolicy.value}
+            <Badge variant="outline" className="gap-1 bg-zinc-900 text-zinc-400 border-zinc-700 text-xs max-w-xs truncate">
+              <RotateCcw className="h-3 w-3 shrink-0" />
+              <span className="truncate">{listing.returnsPolicy.value}</span>
             </Badge>
           )}
           {listing.addedAt && (

@@ -13,6 +13,6 @@ export function getStripe(): Stripe {
 }
 
 export const STRIPE_PRICE_IDS = {
-  SCOUT: process.env.STRIPE_SCOUT_PRICE_ID!,
-  PRO:   process.env.STRIPE_PRO_PRICE_ID!,
+  HUNT:  process.env.STRIPE_HUNT_PRICE_ID!,   // one-time price
+  POWER: process.env.STRIPE_POWER_PRICE_ID!,  // recurring price
 } as const

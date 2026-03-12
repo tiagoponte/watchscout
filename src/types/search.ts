@@ -27,4 +27,5 @@ export interface Search {
   createdAt: string
   updatedAt: string
   decidedListingId?: string
+  unlockedAt?: string | null
 }

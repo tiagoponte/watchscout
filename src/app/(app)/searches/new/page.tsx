@@ -82,7 +82,7 @@ export default function NewSearchPage() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [upgradeReason, setUpgradeReason] = useState<'LIMIT_SEARCHES' | 'LIMIT_LISTINGS' | 'LIMIT_AI' | null>(null)
+  const [upgradeReason, setUpgradeReason] = useState<'LIMIT_SEARCHES' | 'LIMIT_AI' | null>(null)
 
   function toggleCondition(value: string) {
     setConditions((prev) =>

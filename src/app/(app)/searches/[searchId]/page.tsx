@@ -8,11 +8,14 @@ import { getUserContext } from '@/lib/server/get-user-id'
 import { getRankedListings } from '@/lib/db/listings'
 import { ListingRow } from '@/components/searches/listing-row'
 import { AddListingDialog } from '@/components/searches/add-listing-dialog'
+import { UnlockHuntBanner } from '@/components/searches/unlock-hunt-banner'
 import { formatCurrency } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
+import { PLAN_LIMITS } from '@/lib/plans'
 
 interface Props {
   params: Promise<{ searchId: string }>
+  searchParams: Promise<Record<string, string>>
 }
 
 const statusConfig = {
@@ -22,15 +25,21 @@ const statusConfig = {
   archived: { label: 'Archived', className: 'bg-zinc-900 text-zinc-500 border-zinc-700' },
 }
 
-export default async function SearchPage({ params }: Props) {
+export default async function SearchPage({ params, searchParams }: Props) {
   const { searchId } = await params
-  const { id: userId } = await getUserContext()
-  const search = await getSearch(searchId, userId)
+  const sp = await searchParams
+  const user = await getUserContext()
+  const search = await getSearch(searchId, user.id)
   if (!search) notFound()
 
   const rankings = await getRankedListings(searchId)
   const status = statusConfig[search.status]
   const { criteria } = search
+
+  const showUnlockBanner =
+    user.tier !== 'POWER' &&
+    !search.unlockedAt &&
+    rankings.length >= PLAN_LIMITS.FREE.listingsPerSearch
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -41,6 +50,13 @@ export default async function SearchPage({ params }: Props) {
         <ArrowLeft className="h-4 w-4" />
         Dashboard
       </Link>
+
+      {/* Unlock success confirmation */}
+      {sp.unlocked === '1' && (
+        <div className="rounded-lg border border-emerald-800 bg-emerald-950/30 px-4 py-3 mb-5 text-sm text-emerald-400">
+          Hunt unlocked! You now have 15 listing slots and 50 AI interactions for this search.
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
@@ -84,6 +100,9 @@ export default async function SearchPage({ params }: Props) {
           ))}
         </div>
       )}
+
+      {/* Unlock hunt banner */}
+      {showUnlockBanner && <UnlockHuntBanner searchId={searchId} />}
 
       {/* Listings table */}
       {rankings.length === 0 ? (

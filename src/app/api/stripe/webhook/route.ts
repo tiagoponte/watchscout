@@ -25,17 +25,33 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.userId
-        const tier = session.metadata?.tier as 'SCOUT' | 'PRO' | undefined
+        const purchaseType = session.metadata?.purchaseType
         const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id
 
-        if (userId && tier) {
-          await prisma.user.update({
-            where: { id: userId },
-            data: {
-              tier,
-              ...(customerId ? { stripeCustomerId: customerId } : {}),
-            },
-          })
+        if (purchaseType === 'hunt') {
+          const searchId = session.metadata?.searchId
+          const paymentIntentId = typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id
+          if (userId && searchId) {
+            await prisma.search.updateMany({
+              where: { id: searchId, userId },
+              data: {
+                unlockedAt: new Date(),
+                ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+              },
+            })
+          }
+        } else if (purchaseType === 'power') {
+          if (userId) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                tier: 'POWER',
+                ...(customerId ? { stripeCustomerId: customerId } : {}),
+              },
+            })
+          }
         }
         break
       }
@@ -54,7 +70,7 @@ export async function POST(request: Request) {
       }
 
       case 'customer.subscription.updated': {
-        // Handle plan changes (e.g. SCOUT → PRO upgrade via Stripe portal)
+        // Handle plan changes via Stripe portal (only POWER subscription now)
         const subscription = event.data.object as Stripe.Subscription
         const customerId = typeof subscription.customer === 'string'
           ? subscription.customer
@@ -62,14 +78,10 @@ export async function POST(request: Request) {
 
         const priceId = subscription.items.data[0]?.price.id
         const { STRIPE_PRICE_IDS } = await import('@/lib/stripe')
-        const tier = priceId === STRIPE_PRICE_IDS.PRO ? 'PRO'
-                   : priceId === STRIPE_PRICE_IDS.SCOUT ? 'SCOUT'
-                   : null
-
-        if (tier) {
+        if (priceId === STRIPE_PRICE_IDS.POWER) {
           await prisma.user.updateMany({
             where: { stripeCustomerId: customerId },
-            data: { tier },
+            data: { tier: 'POWER' },
           })
         }
         break

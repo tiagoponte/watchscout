@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Link as LinkIcon, Upload, Loader2 } from 'lucide-react'
 import {
@@ -46,9 +46,25 @@ export function AddListingDialog({ searchId }: Props) {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tab, setTab] = useState('url')
   const [dragOver, setDragOver] = useState(false)
-  const [upgradeReason, setUpgradeReason] = useState<'LIMIT_SEARCHES' | 'LIMIT_LISTINGS' | 'LIMIT_AI' | null>(null)
+  const [upgradeReason, setUpgradeReason] = useState<'LIMIT_SEARCHES' | 'LIMIT_AI' | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onPaste(e: ClipboardEvent) {
+      const item = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'))
+      if (!item) return
+      const file = item.getAsFile()
+      if (!file) return
+      setTab('screenshot')
+      handleFile(file)
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   async function submit(body: object) {
     setLoading(true)
@@ -61,8 +77,10 @@ export function AddListingDialog({ searchId }: Props) {
       })
       const data = await res.json()
       if (!res.ok) {
-        if (data.code === 'LIMIT_LISTINGS' || data.code === 'LIMIT_AI') {
-          setUpgradeReason(data.code)
+        if (data.code === 'LIMIT_AI') {
+          setUpgradeReason('LIMIT_AI')
+        } else if (data.code === 'LIMIT_LISTINGS') {
+          setError('Listing limit reached. Unlock this hunt from the search page to add more.')
         } else {
           setError(data.error ?? 'Something went wrong.')
         }
@@ -92,7 +110,7 @@ export function AddListingDialog({ searchId }: Props) {
       onClose={() => setUpgradeReason(null)}
       reason={upgradeReason ?? undefined}
     />
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setError(null) }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setError(null); if (!v) setTab('url') }}>
       <DialogTrigger asChild>
         <Button className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold">
           <Plus className="h-4 w-4 mr-1.5" />
@@ -103,7 +121,7 @@ export function AddListingDialog({ searchId }: Props) {
         <DialogHeader>
           <DialogTitle className="text-zinc-100">Add a Listing</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="url" className="mt-2">
+        <Tabs value={tab} onValueChange={setTab} className="mt-2">
           <TabsList className="bg-zinc-800 w-full">
             <TabsTrigger value="url" className="flex-1 data-[state=active]:bg-zinc-700">
               <LinkIcon className="h-3.5 w-3.5 mr-1.5" />
@@ -174,7 +192,7 @@ export function AddListingDialog({ searchId }: Props) {
               ) : (
                 <>
                   <Upload className="h-6 w-6 text-zinc-500 mb-2" />
-                  <p className="text-sm text-zinc-400">Click to upload or drag &amp; drop</p>
+                  <p className="text-sm text-zinc-400">Click, drag &amp; drop, or Ctrl+V to paste</p>
                   <p className="text-xs text-zinc-600 mt-1">PNG, JPG up to 10MB</p>
                 </>
               )}

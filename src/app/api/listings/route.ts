@@ -33,10 +33,10 @@ export async function POST(request: Request) {
       )
     }
 
-    const aiAllowed = await canMakeAiCall(user.id)
+    const aiAllowed = await canMakeAiCall(user.id, searchId)
     if (!aiAllowed) {
       return NextResponse.json(
-        { error: `Daily AI limit reached (${user.limits.aiCallsPerDay} extractions/day). Resets at midnight UTC.`, code: 'LIMIT_AI' },
+        { error: `AI limit reached for your plan. Upgrade to continue.`, code: 'LIMIT_AI' },
         { status: 429 },
       )
     }
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       extracted = await extractFromImage(imageBase64!, mimeType ?? 'image/jpeg')
     }
 
-    await incrementAiCalls(user.id)
+    await incrementAiCalls(user.id, searchId)
 
     // Screenshots: Claude can see images but cannot know real URLs — discard any hallucinated ones.
     // Instead, crop the screenshot to the watch bounding box Claude identified.
@@ -109,7 +109,8 @@ export async function POST(request: Request) {
         .join(' ')
       const repImage = await findRepresentativeImage(query)
       if (repImage) extracted.photos = [repImage]
-      // If Bing also fails, leave photos empty — ImageOff is better than a raw screenshot
+      // Last resort: use the screenshot itself (already resized to ≤900px by the client)
+      else if (imageBase64) extracted.photos = [`data:image/jpeg;base64,${imageBase64}`]
     }
 
     // Proxy external photo URLs through our server to bypass CDN hotlink protection

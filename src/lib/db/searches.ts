@@ -15,6 +15,7 @@ function mapSearch(row: SearchWithListings): Search {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     decidedListingId: row.decidedListingId ?? undefined,
+    unlockedAt: row.unlockedAt ? row.unlockedAt.toISOString() : null,
   }
 }
 

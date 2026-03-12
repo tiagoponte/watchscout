@@ -9,8 +9,7 @@ datasource db {
 
 enum Tier {
   FREE
-  SCOUT
-  PRO
+  POWER   // was PRO
 }
 
 model User {
@@ -26,17 +25,20 @@ model User {
 }
 
 model Search {
-  id               String    @id
-  userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name             String
-  watchCategory    String?
-  criteria         Json
-  status           String    @default("active")
-  decidedListingId String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  listings         Listing[]
+  id                    String    @id
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  watchCategory         String?
+  criteria              Json
+  status                String    @default("active")
+  decidedListingId      String?
+  unlockedAt            DateTime?  // set when user pays for this hunt
+  stripePaymentIntentId String?    // payment reference for this unlock
+  aiCallsUsed           Int       @default(0)  // lifetime AI calls for this search
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  listings              Listing[]
 
   @@index([userId])
 }

@@ -210,8 +210,8 @@ export default async function HomePage() {
       {/* ── Pricing ── */}
       <section id="pricing" className="max-w-5xl mx-auto px-6 py-20">
         <p className="text-xs font-semibold text-amber-400 uppercase tracking-widest mb-3">Pricing</p>
-        <h2 className="text-3xl font-bold text-zinc-50 mb-2">Start free. Upgrade when you need more.</h2>
-        <p className="text-sm text-zinc-500 mb-12">Most hunts fit comfortably on the free plan.</p>
+        <h2 className="text-3xl font-bold text-zinc-50 mb-2">Start free. Unlock when you&apos;re ready.</h2>
+        <p className="text-sm text-zinc-500 mb-12">Most hunters get everything they need from the free plan and a single hunt unlock.</p>
 
         <div className="grid sm:grid-cols-3 gap-4">
           {/* Free */}
@@ -240,21 +240,21 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          {/* Scout */}
+          {/* Hunt Unlock */}
           <div className="rounded-xl border border-amber-400/30 bg-zinc-900 p-6 flex flex-col relative">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
               <span className="text-xs font-semibold bg-amber-400 text-zinc-950 px-3 py-1 rounded-full whitespace-nowrap">
                 Most popular
               </span>
             </div>
-            <p className="text-sm font-semibold text-zinc-300 mb-1">Scout</p>
-            <p className="text-3xl font-bold text-zinc-50 mb-1">€9.99</p>
-            <p className="text-xs text-zinc-600 mb-6">per month</p>
+            <p className="text-sm font-semibold text-zinc-300 mb-1">Hunt Unlock</p>
+            <p className="text-3xl font-bold text-zinc-50 mb-1">€24.99</p>
+            <p className="text-xs text-zinc-600 mb-6">one-time, per hunt</p>
             <ul className="space-y-2.5 flex-1 mb-6">
               {[
-                '3 active searches',
+                '1 hunt unlocked',
                 '15 listings per search',
-                '50 AI extractions / day',
+                '50 AI interactions per hunt',
                 'Full questionnaire & scoring',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-zinc-400">
@@ -267,19 +267,19 @@ export default async function HomePage() {
               href="/login"
               className="block text-center text-sm font-semibold bg-amber-400 text-zinc-950 hover:bg-amber-300 transition-colors px-4 py-2.5 rounded-md"
             >
-              Start with Scout
+              Unlock when you&apos;re ready
             </Link>
           </div>
 
-          {/* Pro */}
+          {/* Power */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 flex flex-col">
-            <p className="text-sm font-semibold text-zinc-300 mb-1">Pro</p>
-            <p className="text-3xl font-bold text-zinc-50 mb-1">€19.99</p>
+            <p className="text-sm font-semibold text-zinc-300 mb-1">Power</p>
+            <p className="text-3xl font-bold text-zinc-50 mb-1">€49.99</p>
             <p className="text-xs text-zinc-600 mb-6">per month</p>
             <ul className="space-y-2.5 flex-1 mb-6">
               {[
-                'Unlimited searches',
-                'Unlimited listings',
+                'Unlimited simultaneous hunts',
+                'Unlimited listings per search',
                 '200 AI extractions / day',
                 'Full questionnaire & scoring',
               ].map((item) => (
@@ -293,7 +293,7 @@ export default async function HomePage() {
               href="/login"
               className="block text-center text-sm font-semibold border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100 transition-colors px-4 py-2.5 rounded-md"
             >
-              Go Pro
+              Go Power
             </Link>
           </div>
         </div>
