@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.watchscout",
+      "sha256_cert_fingerprints": [
+        "F6:75:48:DC:C8:AB:7D:45:26:6B:14:73:BD:DF:91:E1:FD:65:4C:E7:57:9A:DF:F9:C6:8F:FB:34:8D:3B:8F:7D"
+      ]
+    }
+  }
+]

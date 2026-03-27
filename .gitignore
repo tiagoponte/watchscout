@@ -42,4 +42,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# android build artifacts (keep source, ignore build outputs + keystore)
+/android/.gradle
+/android/app/build
+/android/build
+*.keystore
+*.jks
+
 /src/generated/prisma

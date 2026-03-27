@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Analytics } from "@vercel/analytics/next";
+import { DeepLinkHandler } from "@/components/native/deep-link-handler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
         <TooltipProvider>
           {children}
         </TooltipProvider>
+        <DeepLinkHandler />
         <Analytics />
       </body>
     </html>
