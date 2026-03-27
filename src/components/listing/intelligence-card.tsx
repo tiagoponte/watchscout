@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { ArrowLeft, Shield, RotateCcw } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Shield, RotateCcw } from 'lucide-react'
 import { ListingSourceLink } from './listing-source-link'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { RankedListing } from '@/types'
 import { CardSection } from './card-section'
 import { DataField } from './data-field'
@@ -98,16 +99,34 @@ export function IntelligenceCard({ rankedListing, searchId, watchName, isDemo, d
                 Contacted {formatRelativeDate(listing.contactedAt)}
               </p>
             )}
+            {!listing.url && !isDemo && (
+              <ListingSourceLink listingId={listing.id} searchId={searchId} />
+            )}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <RankBadge rank={rank} delta={rankDelta} />
-            <ListingSourceLink
-              listingId={listing.id}
-              searchId={searchId}
-              platform={listing.platform}
-              url={listing.url}
-              isDemo={isDemo}
-            />
+            {listing.url && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="text-zinc-500 hover:text-amber-400 hover:bg-transparent transition-colors"
+                  >
+                    <a
+                      href={listing.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`View listing on ${getPlatformLabel(listing.platform)}`}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>View on {getPlatformLabel(listing.platform)}</p></TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
