@@ -214,35 +214,36 @@ export function QuestionnairePanel({ listing, searchId }: QuestionnairePanelProp
               </Button>
             </div>
           )}
+
+          {/* Parse section — only shown after a questionnaire has been generated and sent */}
+          <div className="space-y-2 pt-2 border-t border-zinc-800">
+            <Label htmlFor="seller-response" className="text-zinc-400 text-xs uppercase tracking-wider">
+              Paste seller response
+            </Label>
+            <Textarea
+              id="seller-response"
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              placeholder="Paste the seller's reply here and click 'Parse Response' to automatically update the listing card…"
+              className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 min-h-24 resize-none"
+            />
+            {parseError && <p className="text-xs text-red-400">{parseError}</p>}
+            {parseDone && <p className="text-xs text-emerald-400">Listing card updated successfully.</p>}
+            <Button
+              className="w-full bg-zinc-800 text-zinc-200 hover:bg-zinc-700 font-medium"
+              disabled={!response.trim() || parsing}
+              onClick={handleParse}
+            >
+              {parsing ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-1.5" />
+              )}
+              {parsing ? 'Parsing…' : 'Parse Response & Update Card'}
+            </Button>
+          </div>
         </div>
       )}
-
-      <div className="space-y-2 pt-2 border-t border-zinc-800">
-        <Label htmlFor="seller-response" className="text-zinc-400 text-xs uppercase tracking-wider">
-          Paste seller response
-        </Label>
-        <Textarea
-          id="seller-response"
-          value={response}
-          onChange={(e) => setResponse(e.target.value)}
-          placeholder="Paste the seller's reply here and click 'Parse Response' to automatically update the listing card…"
-          className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 min-h-24 resize-none"
-        />
-        {parseError && <p className="text-xs text-red-400">{parseError}</p>}
-        {parseDone && <p className="text-xs text-emerald-400">Listing card updated successfully.</p>}
-        <Button
-          className="w-full bg-zinc-800 text-zinc-200 hover:bg-zinc-700 font-medium"
-          disabled={!response.trim() || parsing}
-          onClick={handleParse}
-        >
-          {parsing ? (
-            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4 mr-1.5" />
-          )}
-          {parsing ? 'Parsing…' : 'Parse Response & Update Card'}
-        </Button>
-      </div>
     </div>
   )
 }

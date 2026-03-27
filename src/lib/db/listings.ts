@@ -160,6 +160,13 @@ export async function updateListingFromQuestionnaire(
   return mapListing(row)
 }
 
+export async function updateListingUrl(listingId: string, searchId: string, url: string): Promise<void> {
+  await prisma.listing.update({
+    where: { id: listingId, searchId },
+    data: { url },
+  })
+}
+
 export async function updateFactorScores(
   listingId: string,
   searchId: string,

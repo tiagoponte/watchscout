@@ -4,7 +4,7 @@ import Image from 'next/image'
 import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ImageOff, MoreHorizontal, ShoppingBag, Trash2, Undo2 } from 'lucide-react'
+import { ChevronRight, ExternalLink, ImageOff, MoreHorizontal, ShoppingBag, Trash2, Undo2 } from 'lucide-react'
 import { RankedListing } from '@/types'
 import { RankBadge } from './rank-badge'
 import { ScoreBar } from './score-bar'
@@ -90,9 +90,24 @@ export function ListingRow({ rankedListing, searchId, decidedListingId, isDemo }
       {/* Platform + seller + price (price shown inline on mobile only) */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs bg-zinc-900 border-zinc-700 text-zinc-400 shrink-0">
-            {getPlatformLabel(listing.platform)}
-          </Badge>
+          {listing.url ? (
+            <a
+              href={listing.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              title={`View on ${getPlatformLabel(listing.platform)}`}
+            >
+              <Badge variant="outline" className="text-xs bg-zinc-900 border-zinc-700 text-zinc-400 shrink-0 hover:border-zinc-500 hover:text-zinc-300 transition-colors gap-1">
+                {getPlatformLabel(listing.platform)}
+                <ExternalLink className="h-2.5 w-2.5" />
+              </Badge>
+            </a>
+          ) : (
+            <Badge variant="outline" className="text-xs bg-zinc-900 border-zinc-700 text-zinc-400 shrink-0">
+              {getPlatformLabel(listing.platform)}
+            </Badge>
+          )}
           {isPurchased && (
             <Badge variant="outline" className="text-xs bg-amber-950/40 border-amber-700/50 text-amber-400 shrink-0">
               Purchased
@@ -192,6 +207,17 @@ export function ListingRow({ rankedListing, searchId, decidedListingId, isDemo }
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                {listing.url && (
+                  <>
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                      <a href={listing.url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Open original listing
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 {isPurchased ? (
                   <DropdownMenuItem className="cursor-pointer" onClick={handleUnmark}>
                     <Undo2 className="h-4 w-4 mr-2" />

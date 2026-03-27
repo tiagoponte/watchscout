@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ArrowLeft, ExternalLink, Shield, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Shield, RotateCcw } from 'lucide-react'
+import { ListingSourceLink } from './listing-source-link'
 import { RankedListing } from '@/types'
 import { CardSection } from './card-section'
 import { DataField } from './data-field'
@@ -13,7 +14,6 @@ import type { DemoQuestionnaire } from '@/data/demo-hunt'
 import { RankBadge } from '@/components/searches/rank-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency, formatRelativeDate, getPlatformLabel, getScoreColor, getRiskColor } from '@/lib/format'
 
 interface IntelligenceCardProps {
@@ -69,9 +69,17 @@ export function IntelligenceCard({ rankedListing, searchId, watchName, isDemo, d
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <Badge variant="outline" className="text-xs bg-zinc-900 border-zinc-700 text-zinc-400">
-                {getPlatformLabel(listing.platform)}
-              </Badge>
+              {listing.url ? (
+                <a href={listing.url} target="_blank" rel="noopener noreferrer">
+                  <Badge variant="outline" className="text-xs bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-300 transition-colors">
+                    {getPlatformLabel(listing.platform)}
+                  </Badge>
+                </a>
+              ) : (
+                <Badge variant="outline" className="text-xs bg-zinc-900 border-zinc-700 text-zinc-400">
+                  {getPlatformLabel(listing.platform)}
+                </Badge>
+              )}
               {listing.referenceNumber.value && (
                 <span className="text-sm text-zinc-500">
                   Ref. {listing.referenceNumber.value}
@@ -93,30 +101,13 @@ export function IntelligenceCard({ rankedListing, searchId, watchName, isDemo, d
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <RankBadge rank={rank} delta={rankDelta} />
-            {listing.url && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="icon"
-                    className="text-zinc-500 hover:text-amber-400 hover:bg-transparent transition-colors"
-                  >
-                    <a
-                      href={listing.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`View listing on ${getPlatformLabel(listing.platform)}`}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>View on {getPlatformLabel(listing.platform)}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <ListingSourceLink
+              listingId={listing.id}
+              searchId={searchId}
+              platform={listing.platform}
+              url={listing.url}
+              isDemo={isDemo}
+            />
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
