@@ -17,12 +17,14 @@ export async function POST(request: Request) {
       url?: string
       imageBase64?: string
       mimeType?: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
+      sourceUrl?: string  // optional origin URL supplied alongside a screenshot
     }
 
-    const { searchId, url, imageBase64, mimeType } = body
+    const { searchId, url, imageBase64, mimeType, sourceUrl } = body
     if (!searchId) return NextResponse.json({ error: 'searchId required' }, { status: 400 })
     if (!url && !imageBase64) return NextResponse.json({ error: 'url or imageBase64 required' }, { status: 400 })
     if (url && !isSafeUrl(url)) return NextResponse.json({ error: 'Invalid listing URL' }, { status: 422 })
+    if (sourceUrl && !isSafeUrl(sourceUrl)) return NextResponse.json({ error: 'Invalid source URL' }, { status: 422 })
 
     const MAX_B64_CHARS = 7 * 1024 * 1024  // ~5 MB after decode
     if (imageBase64 && imageBase64.length > MAX_B64_CHARS) {
@@ -126,7 +128,7 @@ export async function POST(request: Request) {
       photoUrl.startsWith('data:') ? photoUrl : `/api/image-proxy?url=${encodeURIComponent(photoUrl)}`
     )
 
-    const listing = await createListing(searchId, url, extracted)
+    const listing = await createListing(searchId, url ?? sourceUrl, extracted)
     await rerankListings(searchId)
 
     return NextResponse.json({ listingId: listing.id }, { status: 201 })

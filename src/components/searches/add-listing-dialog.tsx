@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Link as LinkIcon, Upload, Loader2 } from 'lucide-react'
+import { Plus, Link as LinkIcon, Upload, Loader2, ImageIcon, X } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,8 @@ export function AddListingDialog({ searchId }: Props) {
   const [tab, setTab] = useState('url')
   const [dragOver, setDragOver] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState<'LIMIT_SEARCHES' | 'LIMIT_AI' | null>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [sourceUrl, setSourceUrl] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -98,9 +100,19 @@ export function AddListingDialog({ searchId }: Props) {
     await submit({ url })
   }
 
-  async function handleFile(file: File) {
-    const imageBase64 = await resizeImage(file)
-    await submit({ imageBase64, mimeType: 'image/jpeg' })
+  function handleFile(file: File) {
+    setPendingFile(file)
+    setError(null)
+  }
+
+  async function submitScreenshot() {
+    if (!pendingFile) return
+    const imageBase64 = await resizeImage(pendingFile)
+    await submit({
+      imageBase64,
+      mimeType: 'image/jpeg',
+      ...(sourceUrl.trim() ? { sourceUrl: sourceUrl.trim() } : {}),
+    })
   }
 
   return (
@@ -110,7 +122,7 @@ export function AddListingDialog({ searchId }: Props) {
       onClose={() => setUpgradeReason(null)}
       reason={upgradeReason ?? undefined}
     />
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setError(null); if (!v) setTab('url') }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setError(null); if (!v) { setTab('url'); setPendingFile(null); setSourceUrl('') } }}>
       <DialogTrigger asChild>
         <Button className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold">
           <Plus className="h-4 w-4 mr-1.5" />
@@ -171,38 +183,73 @@ export function AddListingDialog({ searchId }: Props) {
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) handleFile(file)
+                e.target.value = ''
               }}
             />
-            <div
-              className={`flex flex-col items-center justify-center h-32 rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
-                dragOver ? 'border-amber-400 bg-amber-400/5' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'
-              } ${loading ? 'pointer-events-none opacity-50' : ''}`}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault()
-                setDragOver(false)
-                const file = e.dataTransfer.files?.[0]
-                if (file) handleFile(file)
-              }}
-            >
-              {loading ? (
-                <Loader2 className="h-6 w-6 text-amber-400 animate-spin" />
-              ) : (
-                <>
+            {pendingFile ? (
+              <>
+                {/* File confirmed — show name + URL prompt */}
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700">
+                  <ImageIcon className="h-4 w-4 text-zinc-400 shrink-0" />
+                  <span className="text-sm text-zinc-300 truncate flex-1">{pendingFile.name}</span>
+                  <button
+                    onClick={() => { setPendingFile(null); setSourceUrl(''); setError(null) }}
+                    className="text-zinc-600 hover:text-zinc-400 transition-colors"
+                    aria-label="Remove screenshot"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="source-url" className="text-zinc-300 text-sm">
+                    Original listing URL <span className="text-zinc-600 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="source-url"
+                    value={sourceUrl}
+                    onChange={(e) => setSourceUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !loading && submitScreenshot()}
+                    placeholder="https://www.chrono24.com/..."
+                    className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-zinc-600">Add it now to keep a link back to the original post.</p>
+                </div>
+                {error && <p className="text-xs text-red-400">{error}</p>}
+                <Button
+                  className="w-full bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold"
+                  disabled={loading}
+                  onClick={submitScreenshot}
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  {loading ? 'Analysing screenshot…' : 'Extract Listing Data'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div
+                  className={`flex flex-col items-center justify-center h-32 rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
+                    dragOver ? 'border-amber-400 bg-amber-400/5' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'
+                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setDragOver(false)
+                    const file = e.dataTransfer.files?.[0]
+                    if (file) handleFile(file)
+                  }}
+                >
                   <Upload className="h-6 w-6 text-zinc-500 mb-2" />
                   <p className="text-sm text-zinc-400">Click, drag &amp; drop, or Ctrl+V to paste</p>
                   <p className="text-xs text-zinc-600 mt-1">PNG, JPG up to 10MB</p>
-                </>
-              )}
-            </div>
-            <p className="text-xs text-zinc-500">
-              AI will extract all available data from the screenshot.
-            </p>
-            {error && <p className="text-xs text-red-400">{error}</p>}
-            {loading && (
-              <p className="text-xs text-zinc-400 text-center">Analysing screenshot…</p>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  AI will extract all available data from the screenshot.
+                </p>
+                {error && <p className="text-xs text-red-400">{error}</p>}
+              </>
             )}
           </TabsContent>
         </Tabs>
