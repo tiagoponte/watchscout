@@ -135,7 +135,7 @@ export function IntelligenceCard({ rankedListing, searchId, watchName, isDemo, d
               asChild
               className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold"
             >
-              <a href="#questionnaire">Contact Seller</a>
+              <a href="#questionnaire">Message Seller</a>
             </Button>
           )}
           <Button
