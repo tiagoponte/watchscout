@@ -1,0 +1,42 @@
+name: Android Release Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # also triggerable manually from the Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode \
+            > android/watchscout-release.keystore
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build release AAB
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: watchscout-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
