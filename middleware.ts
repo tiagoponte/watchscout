@@ -2,8 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Skip auth entirely in E2E test mode
-  if (process.env.E2E_SKIP_AUTH === 'true') {
+  // Skip auth entirely in E2E test mode (never allowed in production)
+  if (process.env.E2E_SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
     return NextResponse.next({ request })
   }
 

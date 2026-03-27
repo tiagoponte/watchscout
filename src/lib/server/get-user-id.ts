@@ -39,7 +39,7 @@ async function resolveE2eUser(): Promise<UserContext> {
  * For page/layout server components — redirects to /login if unauthenticated.
  */
 export async function getUserContext(): Promise<UserContext> {
-  if (process.env.E2E_SKIP_AUTH === 'true') return resolveE2eUser()
+  if (process.env.E2E_SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production') return resolveE2eUser()
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -51,7 +51,7 @@ export async function getUserContext(): Promise<UserContext> {
  * For API routes — returns null if unauthenticated (never redirects).
  */
 export async function getApiUserContext(): Promise<UserContext | null> {
-  if (process.env.E2E_SKIP_AUTH === 'true') return resolveE2eUser()
+  if (process.env.E2E_SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production') return resolveE2eUser()
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

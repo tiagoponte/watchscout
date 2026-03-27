@@ -28,8 +28,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const questionnaire = await generateQuestionnaire(search.name, rankedListing.listing, sellerLanguage)
     await incrementAiCalls(user.id)
+    const questionnaire = await generateQuestionnaire(search.name, rankedListing.listing, sellerLanguage)
     await markContacted(listingId, searchId)
 
     return NextResponse.json(questionnaire)

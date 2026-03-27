@@ -2,10 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { deleteListing, rerankListings } from '@/lib/db/listings'
-import { markAsPurchased, unmarkAsPurchased } from '@/lib/db/searches'
+import { getSearch, markAsPurchased, unmarkAsPurchased } from '@/lib/db/searches'
 import { getApiUserContext } from '@/lib/server/get-user-id'
 
 export async function deleteListingAction(listingId: string, searchId: string): Promise<void> {
+  const ctx = await getApiUserContext()
+  if (!ctx) return
+  const search = await getSearch(searchId, ctx.id)
+  if (!search) return
   await deleteListing(listingId, searchId)
   await rerankListings(searchId)
   revalidatePath(`/searches/${searchId}`)

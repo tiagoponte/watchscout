@@ -5,6 +5,7 @@ import { extractFromHtml, extractFromImage, findRepresentativeImage } from '@/li
 import { createListing, rerankListings } from '@/lib/db/listings'
 import { getSearch } from '@/lib/db/searches'
 import { canAddListing, canMakeAiCall, incrementAiCalls } from '@/lib/db/users'
+import { isSafeUrl } from '@/lib/safe-url'
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +22,12 @@ export async function POST(request: Request) {
     const { searchId, url, imageBase64, mimeType } = body
     if (!searchId) return NextResponse.json({ error: 'searchId required' }, { status: 400 })
     if (!url && !imageBase64) return NextResponse.json({ error: 'url or imageBase64 required' }, { status: 400 })
+    if (url && !isSafeUrl(url)) return NextResponse.json({ error: 'Invalid listing URL' }, { status: 422 })
+
+    const MAX_B64_CHARS = 7 * 1024 * 1024  // ~5 MB after decode
+    if (imageBase64 && imageBase64.length > MAX_B64_CHARS) {
+      return NextResponse.json({ error: 'Image too large. Please resize to under 5 MB.' }, { status: 413 })
+    }
 
     const search = await getSearch(searchId, user.id)
     if (!search) return NextResponse.json({ error: 'Search not found' }, { status: 404 })
@@ -44,6 +51,7 @@ export async function POST(request: Request) {
     let extracted
     if (url) {
       const res = await fetch(url, {
+        redirect: 'manual',  // prevent redirect chains to private IPs
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -70,12 +78,12 @@ export async function POST(request: Request) {
           { status: 422 },
         )
       }
+      await incrementAiCalls(user.id, searchId)
       extracted = await extractFromHtml(html, url)
     } else {
+      await incrementAiCalls(user.id, searchId)
       extracted = await extractFromImage(imageBase64!, mimeType ?? 'image/jpeg')
     }
-
-    await incrementAiCalls(user.id, searchId)
 
     // Screenshots: Claude can see images but cannot know real URLs — discard any hallucinated ones.
     // Instead, crop the screenshot to the watch bounding box Claude identified.
@@ -123,8 +131,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ listingId: listing.id }, { status: 201 })
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.error('POST /api/listings', msg)
-    return NextResponse.json({ error: `Extraction failed: ${msg}` }, { status: 500 })
+    console.error('POST /api/listings', e)
+    return NextResponse.json({ error: 'Failed to process listing. Please try again.' }, { status: 500 })
   }
 }

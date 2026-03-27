@@ -28,8 +28,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const suggestion = await generateOfferSuggestion(search.name, rankedListing.listing)
     await incrementAiCalls(user.id)
+    const suggestion = await generateOfferSuggestion(search.name, rankedListing.listing)
 
     return NextResponse.json(suggestion)
   } catch (e) {

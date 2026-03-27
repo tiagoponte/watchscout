@@ -12,7 +12,9 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json() as CheckoutBody
-    const origin = request.headers.get('origin') ?? 'https://watchscout.vercel.app'
+    const ALLOWED_ORIGINS = ['https://watchscout.vercel.app', 'http://localhost:3000', 'http://localhost:3001']
+    const requestOrigin = request.headers.get('origin') ?? ''
+    const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : 'https://watchscout.vercel.app'
 
     if (body.purchaseType === 'hunt') {
       const { searchId } = body

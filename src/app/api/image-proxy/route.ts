@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSafeUrl } from '@/lib/safe-url'
 
 /**
  * Server-side image proxy.
@@ -11,8 +12,7 @@ export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url')
   if (!url) return new NextResponse('Missing url param', { status: 400 })
 
-  // Only allow http/https URLs
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+  if (!isSafeUrl(url)) {
     return new NextResponse('Invalid URL', { status: 400 })
   }
 
