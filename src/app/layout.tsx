@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Analytics } from "@vercel/analytics/next";
 import { DeepLinkHandler } from "@/components/native/deep-link-handler";
+import { NativeInit } from "@/components/native/native-init";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,6 +15,10 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  viewportFit: 'cover', // enables env(safe-area-inset-*) for notch/gesture bar
+}
 
 export const metadata: Metadata = {
   title: "WatchScout",
@@ -32,6 +37,7 @@ export default function RootLayout({
           {children}
         </TooltipProvider>
         <DeepLinkHandler />
+        <NativeInit />
         <Analytics />
       </body>
     </html>

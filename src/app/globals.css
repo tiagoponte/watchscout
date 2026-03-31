@@ -120,8 +120,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Prevent WebView rubber-band/overscroll glow on Android */
+    overscroll-behavior: none;
+  }
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior: none;
+    /* System font fallback while Geist loads — metrics-compatible, avoids layout shift */
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
 }
 

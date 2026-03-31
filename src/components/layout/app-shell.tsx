@@ -18,7 +18,7 @@ export function AppShell({ children, searches, userEmail, tier }: AppShellProps)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-zinc-950 overflow-hidden">
+    <div className="flex h-screen bg-zinc-950 overflow-hidden pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0">
         <AppSidebar searches={searches} userEmail={userEmail} tier={tier} />
@@ -35,7 +35,7 @@ export function AppShell({ children, searches, userEmail, tier }: AppShellProps)
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0">
         <AppHeader onMenuClick={() => setMobileOpen(true)} userEmail={userEmail} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">{children}</main>
       </div>
     </div>
   )
