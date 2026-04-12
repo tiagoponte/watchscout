@@ -21,16 +21,16 @@ export default function DemoSearchPage() {
           size="sm"
           className="bg-amber-400 text-zinc-950 hover:bg-amber-300 font-semibold shrink-0"
         >
-          <Link href="/searches/new">Start your own hunt →</Link>
+          <Link href="/login">Start your own hunt →</Link>
         </Button>
       </div>
 
       <Link
-        href="/dashboard"
+        href="/"
         className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-200 transition-colors mb-4"
       >
         <ArrowLeft className="h-4 w-4" />
-        Dashboard
+        Home
       </Link>
 
       {/* Header */}
