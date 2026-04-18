@@ -5,9 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { ListingRow } from '@/components/searches/listing-row'
 import { formatCurrency } from '@/lib/format'
 import { demoSearch, getDemoRankings } from '@/data/demo-hunt'
+import { computeRowSignals } from '@/lib/signals'
 
 export default function DemoSearchPage() {
   const rankings = getDemoRankings()
+  const rowSignals = computeRowSignals(rankings)
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -84,7 +86,7 @@ export default function DemoSearchPage() {
       {/* Listings table */}
       <div className="rounded-lg border border-zinc-800 overflow-hidden">
         {rankings.map((r) => (
-          <ListingRow key={r.listing.id} rankedListing={r} searchId="demo" isDemo />
+          <ListingRow key={r.listing.id} rankedListing={r} searchId="demo" isDemo signal={rowSignals.get(r.listing.id)} />
         ))}
       </div>
 

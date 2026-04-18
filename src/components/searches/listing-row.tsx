@@ -15,12 +15,14 @@ import { Button } from '@/components/ui/button'
 import { formatCurrency, getPlatformLabel, getScoreColor } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
 import { deleteListingAction, markAsPurchasedAction, unmarkAsPurchasedAction } from '@/app/(app)/searches/[searchId]/actions'
+import { RowSignal, signalColorClass } from '@/lib/signals'
 
 interface ListingRowProps {
   rankedListing: RankedListing
   searchId: string
   decidedListingId?: string
   isDemo?: boolean
+  signal?: RowSignal
 }
 
 const conditionLabels: Record<string, string> = {
@@ -31,7 +33,7 @@ const conditionLabels: Record<string, string> = {
   poor: 'Poor',
 }
 
-export function ListingRow({ rankedListing, searchId, decidedListingId, isDemo }: ListingRowProps) {
+export function ListingRow({ rankedListing, searchId, decidedListingId, isDemo, signal }: ListingRowProps) {
   const { listing, rank, compositeScore, rankDelta } = rankedListing
   const price = listing.askingPrice.value
   const currency = listing.currency.value ?? 'EUR'
@@ -154,6 +156,21 @@ export function ListingRow({ rankedListing, searchId, decidedListingId, isDemo }
             {formatCurrency(listing.allInPrice, currency)} all-in
           </p>
         )}
+        {listing.marketRefPrice != null && (
+          <p className="text-xs text-zinc-600 tabular-nums">
+            ~{formatCurrency(listing.marketRefPrice, currency)} avg
+          </p>
+        )}
+        {listing.marketRefPrice != null && price != null && (() => {
+          const ref = listing.allInPrice ?? price
+          const delta = Math.abs(ref - listing.marketRefPrice)
+          const below = ref < listing.marketRefPrice
+          return (
+            <p className={`text-xs tabular-nums ${below ? 'text-emerald-500' : 'text-orange-400'}`}>
+              {below ? `↓ ${formatCurrency(delta, currency)} below` : `↑ ${formatCurrency(delta, currency)} above`}
+            </p>
+          )
+        })()}
       </div>
 
       {/* Score — number only on mobile, bars on md+ */}
@@ -188,11 +205,26 @@ export function ListingRow({ rankedListing, searchId, decidedListingId, isDemo }
               </TooltipContent>
             </Tooltip>
           )}
+          {signal && (
+            <p className={`text-xs mt-2 ${signalColorClass(signal.color)}`}>{signal.label}</p>
+          )}
         </div>
       </div>
 
       {/* Actions + arrow */}
       <div className="flex items-center shrink-0 -mr-2">
+        {listing.url && (
+          <a
+            href={listing.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="hidden sm:flex items-center gap-1 text-xs text-zinc-600 hover:text-amber-400 transition-colors opacity-0 group-hover:opacity-100 mr-1 px-1.5 py-1 rounded hover:bg-zinc-800"
+          >
+            View
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
         {!isDemo && (
           <div onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>

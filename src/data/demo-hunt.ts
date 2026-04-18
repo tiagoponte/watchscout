@@ -1,14 +1,12 @@
 import { Search, ListingCard, RankedListing } from '@/types'
 import { scoreListings } from '@/lib/scoring'
 
-const proxy = (url: string) => `/api/image-proxy?url=${encodeURIComponent(url)}`
-
-// One real photo per listing, proxied to avoid CDN hotlink protection
+// Static demo photos served from /public/demo/ — no proxy needed, no hotlink issues
 const DEMO_PHOTOS: Record<string, string[]> = {
-  lst_demo_01: [proxy('https://s.turbifycdn.com/aah/movadobaby/omega-speedmaster-professional-moonwatch-311-30-42-30-01-005-259.jpg')],
-  lst_demo_02: [proxy('https://cdn.watchbase.com/watch/lg/omega/speedmaster/311-30-42-30-01-005-a3.png')],
-  lst_demo_03: [proxy('https://www.omegawatches.com/media/catalog/product/o/m/omega-speedmaster-moonwatch-professional-chronograph-42-mm-31130423001005-watch-wrist-e997ef.png')],
-  lst_demo_04: [proxy('https://feldmarwatch.com/wp-content/uploads/2020/12/311.30.42.30.01.005.jpg')],
+  lst_demo_01: ['/demo/listing-01.jpg'],
+  lst_demo_02: ['/demo/listing-02.jpg'],
+  lst_demo_03: ['/demo/listing-01.jpg'],
+  lst_demo_04: ['/demo/listing-02.jpg'],
 }
 
 export const demoSearch: Search = {
@@ -97,6 +95,7 @@ export const demoListings: ListingCard[] = [
     },
     actualShippingToUser: { value: 25, confidence: 'confirmed', source: 'Seller questionnaire response' },
     allInPrice: 4875,
+    marketRefPrice: 5200,
     valueScore: 72,
     riskScore: 44,
     conditionConfidence: 58,
@@ -155,6 +154,7 @@ export const demoListings: ListingCard[] = [
     braceletSizingInfo: { value: '3 extra links included, adjusted to 19cm', confidence: 'confirmed' },
     actualShippingToUser: { value: 0, confidence: 'confirmed' },
     allInPrice: 6200,
+    marketRefPrice: 6000,
     valueScore: 71,
     riskScore: 14,
     conditionConfidence: 96,
@@ -205,6 +205,7 @@ export const demoListings: ListingCard[] = [
     braceletSizingInfo: { value: null, confidence: 'unknown' },
     actualShippingToUser: { value: null, confidence: 'unknown' },
     allInPrice: null,
+    marketRefPrice: 5000,
     valueScore: 58,
     riskScore: 61,
     conditionConfidence: 38,
@@ -250,6 +251,7 @@ export const demoListings: ListingCard[] = [
     braceletSizingInfo: { value: null, confidence: 'unknown' },
     actualShippingToUser: { value: null, confidence: 'unknown' },
     allInPrice: null,
+    marketRefPrice: 5000,
     valueScore: 41,
     riskScore: 79,
     conditionConfidence: 15,

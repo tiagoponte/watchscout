@@ -12,6 +12,7 @@ import { UnlockHuntBanner } from '@/components/searches/unlock-hunt-banner'
 import { formatCurrency } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
 import { PLAN_LIMITS } from '@/lib/plans'
+import { computeRowSignals } from '@/lib/signals'
 
 interface Props {
   params: Promise<{ searchId: string }>
@@ -33,6 +34,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
   if (!search) notFound()
 
   const rankings = await getRankedListings(searchId)
+  const rowSignals = computeRowSignals(rankings)
   const status = statusConfig[search.status]
   const { criteria } = search
 
@@ -113,7 +115,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
       ) : (
         <div className="rounded-lg border border-zinc-800 overflow-hidden">
           {rankings.map((r) => (
-            <ListingRow key={r.listing.id} rankedListing={r} searchId={searchId} decidedListingId={search.decidedListingId} />
+            <ListingRow key={r.listing.id} rankedListing={r} searchId={searchId} decidedListingId={search.decidedListingId} signal={rowSignals.get(r.listing.id)} />
           ))}
         </div>
       )}

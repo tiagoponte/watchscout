@@ -50,3 +50,5 @@ next-env.d.ts
 *.jks
 
 /src/generated/prisma
+
+.vercel

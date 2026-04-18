@@ -71,4 +71,7 @@ export interface ListingCard {
   updatedAt: string
   contactedAt?: string
   notes?: string
+
+  // Optional market reference price (used for demo; future: sourced from market data)
+  marketRefPrice?: number
 }
